@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @theme {
   /* Spacing - extends default Tailwind spacing */
   --spacing-xs: 0.5rem;    /* 8px */
@@ -10,8 +19,8 @@
   --spacing-2xl: 4rem;     /* 64px */
   
   /* Font families */
-  --font-sans: 'Courier New', 'Courier', monospace;
-  --font-mono: 'Courier New', 'Courier', monospace;
+  --font-sans: 'Special Elite', 'Courier New', 'Courier', monospace;
+  --font-mono: 'Special Elite', 'Courier New', 'Courier', monospace;
   
   /* Font sizes */
   --font-size-xs: 0.75rem;    /* 12px */
@@ -57,7 +66,7 @@
     --color-surface-elevated: #1a1a1a;
     
     --color-text-primary: #ffffff;
-    --color-text-secondary: #a3a3a3;
+    --color-text-secondary: #e5e5e5;
     --color-text-muted: #525252;
     
     --color-border: #262626;
@@ -67,8 +76,61 @@
 
 /* Base styles */
 body {
+  margin: 0;
   font-family: var(--font-sans);
   background-color: var(--color-background);
   color: var(--color-text-primary);
+  overscroll-behavior: none;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Cursor styles for clickable elements */
+a, button, [role="button"] {
+  cursor: crosshair;
+}
+
+/* Printed/distressed text effect - simulates rough ink/stamp */
+.text-printed {
+  /* SVG filter for subtle rough edges */
+  filter: url('#roughen') contrast(1.1);
+  letter-spacing: 0.03em;
+  text-shadow: 
+    0.5px 0.5px 0px rgba(0, 0, 0, 0.2),
+    -0.5px -0.5px 0px rgba(0, 0, 0, 0.15);
+}
+
+/* Rough border effect */
+.rough-border {
+  filter: url(#rough-border);
+}
+
+/* Rough text effect without border - applies filter to text/content */
+.text-rough {
+  filter: url(#roughen);
+}
+
+@media (prefers-color-scheme: dark) {
+  .text-printed {
+    filter: url('#roughen') contrast(1.05);
+    text-shadow: 
+      0.5px 0.5px 0px rgba(255, 255, 255, 0.15),
+      -0.5px -0.5px 0px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Apply grayscale filter only to background/hero images */
+  .bg-image {
+    filter: grayscale(100%) brightness(0.8);
+  }
+
+  /* Album covers: grayscale by default, color on parent hover */
+  .album-cover {
+    filter: grayscale(100%) brightness(0.8);
+    transition: filter 0.3s ease;
+  }
+
+  /* Remove grayscale when hovering over the parent container */
+  a:hover .album-cover,
+  div:hover > .album-cover {
+    filter: grayscale(0%) brightness(1);
+  }
 }
