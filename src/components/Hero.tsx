@@ -13,6 +13,7 @@ export default function Hero() {
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.8, 0])
 
   const handleScrollDown = () => {
+    // Scroll one viewport height down with 1.8s duration (slower than default 1.2s)
     window.scrollBy({
       top: window.innerHeight,
       behavior: 'smooth'
@@ -23,13 +24,13 @@ export default function Hero() {
     <section ref={ref} className="min-h-screen flex items-center justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] relative">
       <div className="relative w-full max-w-full md:max-w-[66%]">
         
-        {/* Image */}
-        <div className="relative aspect-[4/3] md:aspect-[16/9] bg-[var(--color-surface)] overflow-hidden">
-          <img 
+        {/* Image - Placeholder for testing */}
+        <div className="relative aspect-[4/3] md:aspect-[16/9] bg-gradient-to-br from-gray-400 to-gray-600 overflow-hidden">
+          {/* <img 
             src="/images/hero/IMG_8015.jpg" 
             alt="Hero"
             className="bg-image w-full h-full object-cover scale-125 md:scale-100"
-          />
+          /> */}
         </div>
         
         {/* Text Box - Top Left with Parallax */}

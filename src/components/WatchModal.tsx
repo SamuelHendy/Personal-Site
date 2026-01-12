@@ -90,7 +90,7 @@ export default function WatchModal({ watch, imageUrl, onClose, thumbnailRect }: 
         {/* Left box - Image */}
         <motion.div 
           className="rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] p-8 flex items-center justify-center"
-          style={{ width: '64vh', height: '80vh' }}
+          style={{ width: '60vh', height: '80vh', aspectRatio: '3/4' }}
           onClick={(e) => e.stopPropagation()}
           initial={thumbnailRect ? {
             x: thumbnailRect.left + thumbnailRect.width / 2 - window.innerWidth * 0.25,
@@ -106,7 +106,7 @@ export default function WatchModal({ watch, imageUrl, onClose, thumbnailRect }: 
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
           <img
-            src={imageUrl}
+            src="https://placehold.co/600x800/e5e5e5/525252?text=Watch"
             alt="Watch"
             className="max-w-full max-h-full w-auto h-auto object-contain"
           />

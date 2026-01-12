@@ -4,6 +4,8 @@ import { ChevronRight, Search, Star } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import WatchCard from '../components/WatchCard'
 import WatchModal from '../components/WatchModal'
+import MobileWatchCard from '../components/MobileWatchCard'
+import MobileWatchModal from '../components/MobileWatchModal'
 
 interface Watch {
   Brand: string
@@ -53,78 +55,134 @@ export default function Watches() {
   const [selectedWatch, setSelectedWatch] = useState<Watch | null>(null)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | undefined>(undefined)
 
-  // Navigation functions
+  // Mobile carousel state
+  const [mobileCardIndex, setMobileCardIndex] = useState(0)
+  const [mobileModalWatch, setMobileModalWatch] = useState<Watch | null>(null)
+  const [swipeDirection, setSwipeDirection] = useState<'forward' | 'backward'>('forward')
+
+  // Mobile navigation functions
+  const goToNextCard = () => {
+    if (mobileCardIndex < filteredWatches.length - 1) {
+      setSwipeDirection('forward')
+      setMobileCardIndex(mobileCardIndex + 1)
+    }
+  }
+
+  const goToPreviousCard = () => {
+    if (mobileCardIndex > 0) {
+      setSwipeDirection('backward')
+      setMobileCardIndex(mobileCardIndex - 1)
+    }
+  }
+
+  // Desktop navigation functions
   const scrollToNext = () => {
+    if (isSnappingRef.current) return // Prevent clicks during animation
+    
     const currentCard = Math.round(scrollPosition / 800)
     const nextScroll = (currentCard + 1) * 800
-    const maxScroll = (filteredWatches.length - 4) * 800
+    const maxScroll = (watches.length - 4) * 800
     if (nextScroll <= maxScroll) {
+      isSnappingRef.current = true
       window.scrollTo({ top: nextScroll, behavior: 'smooth' })
+      setScrollPosition(nextScroll)
+      
+      setTimeout(() => {
+        isSnappingRef.current = false
+      }, 500)
     }
   }
 
   const scrollToPrevious = () => {
+    if (isSnappingRef.current) return // Prevent clicks during animation
+    
     const currentCard = Math.round(scrollPosition / 800)
     const prevScroll = (currentCard - 1) * 800
     if (prevScroll >= 0) {
+      isSnappingRef.current = true
       window.scrollTo({ top: prevScroll, behavior: 'smooth' })
+      setScrollPosition(prevScroll)
+      
+      setTimeout(() => {
+        isSnappingRef.current = false
+      }, 500)
     }
   }
+
+  // Hide scrollbar on body element
+  useEffect(() => {
+    document.body.classList.add('hide-scrollbar')
+    return () => {
+      document.body.classList.remove('hide-scrollbar')
+    }
+  }, [])
 
   // Reset scroll position when search or filter changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [searchQuery, selectedFilter])
 
-  // Track scroll position and handle snapping
+  // Track scroll position and handle immediate snapping (scroll hijacking)
   useEffect(() => {
     const scrollPerCard = 800
+    const scrollAccumulator = { value: 0 }
+    const SCROLL_THRESHOLD = 50
 
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      if (isSnappingRef.current) return
+      
+      // Accumulate both vertical and horizontal scroll (horizontal at 0.5x speed)
+      // Horizontal swipe left = positive deltaX = next card
+      scrollAccumulator.value += e.deltaY + (e.deltaX * 0.5)
+      
+      if (Math.abs(scrollAccumulator.value) >= SCROLL_THRESHOLD) {
+        const currentCard = Math.round(scrollPosition / scrollPerCard)
+        const maxCards = Math.max(0, watches.length - 4)
+        
+        if (scrollAccumulator.value > 0 && currentCard < maxCards) {
+          // Scroll down/right - next card
+          const targetScroll = (currentCard + 1) * scrollPerCard
+          isSnappingRef.current = true
+          scrollAccumulator.value = 0
+          
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' })
+          setScrollPosition(targetScroll)
+          
+          setTimeout(() => {
+            isSnappingRef.current = false
+          }, 500)
+        } else if (scrollAccumulator.value < 0 && currentCard > 0) {
+          // Scroll up/left - previous card
+          const targetScroll = (currentCard - 1) * scrollPerCard
+          isSnappingRef.current = true
+          scrollAccumulator.value = 0
+          
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' })
+          setScrollPosition(targetScroll)
+          
+          setTimeout(() => {
+            isSnappingRef.current = false
+          }, 500)
+        }
+      }
+    }
+    
     const handleScroll = () => {
-      // Update scroll position
       if (!isSnappingRef.current) {
         setScrollPosition(window.scrollY)
       }
-
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
-
-      // Set new timeout for snapping
-      scrollTimeoutRef.current = setTimeout(() => {
-        if (isSnappingRef.current) return
-
-        const currentScroll = window.scrollY
-        const currentCardProgress = currentScroll / scrollPerCard
-        const nearestCard = Math.round(currentCardProgress)
-        const targetScroll = nearestCard * scrollPerCard
-
-        // Only snap if we're not already at a snap point
-        if (Math.abs(currentScroll - targetScroll) > 5) {
-          isSnappingRef.current = true
-          window.scrollTo({
-            top: targetScroll,
-            behavior: 'smooth'
-          })
-          
-          // Reset snapping flag after animation completes
-          setTimeout(() => {
-            isSnappingRef.current = false
-            setScrollPosition(targetScroll)
-          }, 500)
-        }
-      }, 50) // Wait 50ms after user stops scrolling
     }
 
+    window.addEventListener('wheel', handleWheel, { passive: false })
     window.addEventListener('scroll', handleScroll)
     return () => {
+      window.removeEventListener('wheel', handleWheel)
       window.removeEventListener('scroll', handleScroll)
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
     }
-  }, [])
+  }, [scrollPosition, watches.length])
 
   useEffect(() => {
     fetch('https://3y8jxev5y3.execute-api.eu-west-2.amazonaws.com/api/watches')
@@ -239,31 +297,9 @@ export default function Watches() {
     return currentPosition
   }
 
-  // Convert horizontal scroll to vertical scroll
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      // Check if there's horizontal scroll (deltaX)
-      if (Math.abs(e.deltaX) > 0) {
-        // Prevent default horizontal scroll
-        e.preventDefault()
-        // Scroll the page vertically by the horizontal delta amount (1:1 mapping)
-        window.scrollBy({
-          top: e.deltaX,
-          behavior: 'auto'
-        })
-      }
-    }
-
-    // Add event listener with passive: false to allow preventDefault
-    window.addEventListener('wheel', handleWheel, { passive: false })
-    
-    return () => {
-      window.removeEventListener('wheel', handleWheel)
-    }
-  }, [])
-
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, white, #888888)' }}>
+    <div className="min-h-screen bg-[var(--color-background)] hide-scrollbar">
+      
       {/* Fixed content that follows scroll */}
       <div className="fixed inset-0 text-[var(--color-text-primary)] py-[var(--spacing-xl)] overflow-hidden">
         {/* Header */}
@@ -281,7 +317,7 @@ export default function Watches() {
         <div className="mb-6 space-y-3 px-[var(--spacing-md)] md:px-[var(--spacing-lg)]">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           {/* Search Box - First */}
-          <div className="rough-border relative flex-1 min-w-[400px] max-w-2xl border border-[var(--color-text-primary)] bg-[var(--color-background)]">
+          <div className="rough-border relative w-full md:flex-1 md:min-w-[400px] md:max-w-2xl border border-[var(--color-text-primary)] bg-[var(--color-background)]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-primary)] z-10 pointer-events-none -translate-y-[calc(50%+2px)]" size={20} />
             <input
               type="text"
@@ -327,7 +363,7 @@ export default function Watches() {
           <span className="text-xl text-[var(--color-text-secondary)]">No watches found</span>
         </div>
       ) : (
-        <div className="relative h-[calc(100vh-320px)] flex items-center justify-center">
+        <div className="hidden md:flex relative h-[calc(100vh-320px)] items-center justify-center">
           {/* Navigation Buttons */}
           <button
             onClick={scrollToPrevious}
@@ -485,13 +521,85 @@ export default function Watches() {
       )}
       </div>
 
-      {/* Blank space for scroll - calculated so last card stops at position 3 */}
-      {/* rawPosition = cardScrollTurn - scrollOffset */}
-      {/* For last card (index N-1) at position 3: (N-1) - scrollOffset = 3, so scrollOffset = N-4 */}
-      {/* maxScroll = (N-4) * 800 */}
-      <div style={{ height: `${(filteredWatches.length - 4) * 800 + 500}px` }}></div>
+      {/* Mobile Carousel - Visible only on mobile */}
+      {!loading && filteredWatches.length > 0 && (
+        <div className="md:hidden fixed top-[360px] bottom-0 left-0 right-0 flex flex-col items-center justify-center overflow-hidden py-8">
+          {/* Swipe indicator */}
+          <div className="mb-4 text-[var(--color-text-secondary)] flex items-center gap-2">
+            <span className="text-2xl">←</span>
+            <span className="text-sm uppercase tracking-wider">Swipe</span>
+            <div className="h-px w-16 bg-[var(--color-text-secondary)]"></div>
+          </div>
+          
+          <motion.div 
+            className="relative flex-1 w-full flex items-center justify-center touch-pan-y"
+            onPanEnd={(_, info) => {
+              if (info.offset.x < -50) {
+                // Swipe left - bring new card from right
+                goToNextCard()
+              } else if (info.offset.x > 50) {
+                // Swipe right - remove current card to right
+                goToPreviousCard()
+              }
+            }}
+          >
+            {/* All Previous Cards - Stacked in center with place pile transformations */}
+            {Array.from({ length: mobileCardIndex }).map((_, i) => {
+              const watch = filteredWatches[i]
+              const placePile = watch.place_pile || { vertical: 0, tilt: 0 }
+              return (
+                <div 
+                  key={`prev-${watch.Model_Id}`}
+                  className="absolute w-[70%] h-full flex items-center justify-center pointer-events-none" 
+                  style={{ 
+                    transform: `translateY(${placePile.vertical}px) rotate(${placePile.tilt}deg)`,
+                    zIndex: i
+                  }}
+                >
+                  <MobileWatchCard
+                    modelId={watch.Model_Id}
+                  />
+                </div>
+              )
+            })}
 
-      {/* Watch Modal */}
+            {/* Current Card - Slides in, on top of stack */}
+            <motion.div
+              key={mobileCardIndex}
+              variants={{
+                enter: (direction: 'forward' | 'backward') => ({
+                  x: direction === 'forward' ? window.innerWidth : 0,
+                  scale: direction === 'forward' ? 1 : 1.05
+                }),
+                center: {
+                  x: 0,
+                  scale: 1
+                },
+                exit: (direction: 'forward' | 'backward') => ({
+                  x: direction === 'forward' ? -window.innerWidth : window.innerWidth
+                })
+              }}
+              custom={swipeDirection}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-[70%] h-full flex justify-center"
+              style={{ zIndex: mobileCardIndex + 10 }}
+            >
+              <MobileWatchCard
+                modelId={filteredWatches[mobileCardIndex].Model_Id}
+                onClick={() => setMobileModalWatch(filteredWatches[mobileCardIndex])}
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Blank space for scroll - calculated so last card stops at position 3 */}
+      <div className="hidden md:block" style={{ height: `${(filteredWatches.length - 4) * 800 + 500}px` }}></div>
+
+      {/* Watch Modal - Desktop */}
       <AnimatePresence>
         {selectedWatch && (
           <WatchModal
@@ -499,6 +607,17 @@ export default function Watches() {
             imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/Watches/${selectedWatch.Model_Id}.jpg`}
             onClose={() => setSelectedWatch(null)}
             thumbnailRect={thumbnailRect}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Watch Modal - Mobile */}
+      <AnimatePresence>
+        {mobileModalWatch && (
+          <MobileWatchModal
+            watch={mobileModalWatch}
+            imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/Watches/${mobileModalWatch.Model_Id}.jpg`}
+            onClose={() => setMobileModalWatch(null)}
           />
         )}
       </AnimatePresence>

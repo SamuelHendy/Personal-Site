@@ -11,20 +11,15 @@ export default function MainNav() {
   })
 
   const handleScrollDown = () => {
+    // Scroll one viewport height down with slower speed
     window.scrollBy({ top: window.innerHeight, behavior: 'smooth' })
   }
   
-  // Left buttons move left to right at different speeds
+  // Parallax transforms
   const albumsX = useTransform(scrollYProgress, [0, 1], [-30, 30])
   const watchesX = useTransform(scrollYProgress, [0, 1], [-60, 60])
-  
-  // Social icons move up and down
   const socialY = useTransform(scrollYProgress, [0, 1], [50, -50])
-  
-  // Main photo parallax left
   const photoX = useTransform(scrollYProgress, [0, 1], [0, -40])
-  
-  // Panoramic image horizontal parallax
   const panoramicX = useTransform(scrollYProgress, [0, 1], [-40, 40])
 
   return (
@@ -60,24 +55,24 @@ export default function MainNav() {
           {/* Photo - Mobile version with offset to counteract parallax */}
           <motion.div 
             style={{ x: photoX }}
-            className="aspect-[2/1] bg-[var(--color-surface)] md:hidden translate-x-[20px]"
+            className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-blue-600 md:hidden translate-x-[20px]"
           >
-            <img 
+            {/* <img 
               src="/images/main-nav/IMG_8647.jpg" 
               alt="Profile"
               className="bg-image w-full h-full object-cover"
-            />
+            /> */}
           </motion.div>
           {/* Photo - Desktop version with full parallax */}
           <motion.div 
             style={{ x: photoX }}
-            className="aspect-[2/1] bg-[var(--color-surface)] ml-8 hidden md:block"
+            className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-blue-600 ml-8 hidden md:block"
           >
-            <img 
+            {/* <img 
               src="/images/main-nav/IMG_8647.jpg" 
               alt="Profile"
               className="bg-image w-full h-full object-cover"
-            />
+            /> */}
           </motion.div>
 
           {/* Social Icons Box - Overlapping bottom left */}
@@ -149,15 +144,15 @@ export default function MainNav() {
       <div className="w-full md:max-w-[85%] md:mx-auto mt-8 md:mt-40">
         <motion.div 
           style={{ x: panoramicX }}
-          className="w-full md:w-[calc(80%+8%)] ml-0 md:-ml-[8%]"
+          className="w-full md:w-[80%] ml-0 md:-ml-[8%]"
         >
-          <div className="aspect-[2/1] md:aspect-[9/1] bg-[var(--color-surface)]">
-            <img 
+          <div className="aspect-[2/1] md:aspect-[9/1] bg-gradient-to-r from-green-400 to-green-600">
+            {/* <img 
               src="/images/main-nav/IMG_7916.jpg" 
               alt="Wide panoramic"
               className="bg-image w-full h-full object-cover"
               style={{ objectPosition: 'center 37%' }}
-            />
+            /> */}
           </div>
         </motion.div>
       </div>

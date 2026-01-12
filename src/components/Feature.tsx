@@ -94,13 +94,13 @@ export default function Feature() {
           {/* Left Image - Landscape */}
           <motion.div 
             style={{ x: leftImageX, willChange: 'transform' }}
-            className="w-full md:w-1/2 aspect-[3/2] bg-[var(--color-surface)] overflow-hidden"
+            className="w-full md:w-1/2 aspect-[3/2] bg-gradient-to-br from-purple-400 to-purple-600 overflow-hidden"
           >
-            <img 
+            {/* <img 
               src="/images/featured/IMG_7765.jpg" 
               alt="Featured"
               className="bg-image w-full h-full object-cover"
-            />
+            /> */}
           </motion.div>
 
           {/* Card and Button */}
@@ -115,12 +115,12 @@ export default function Feature() {
                   Project description goes here...
                 </p>
               </div>
-              <div className="w-full md:w-1/3 h-48 md:h-full bg-[var(--color-surface)] overflow-hidden">
-                <img 
+              <div className="w-full md:w-1/3 h-48 md:h-full bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden">
+                {/* <img 
                   src="/images/featured/IMG_7976.jpg" 
                   alt="Project detail"
                   className="bg-image w-full h-full object-cover"
-                />
+                /> */}
               </div>
             </div>
 
@@ -144,13 +144,13 @@ export default function Feature() {
       {/* Right Image - Portrait, positioned behind everything */}
       <motion.div 
         style={{ y: rightImageY, willChange: 'transform' }}
-        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-[30%] aspect-[3/4] bg-[var(--color-surface)] overflow-hidden z-1"
+        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-[30%] aspect-[3/4] bg-gradient-to-br from-pink-400 to-pink-600 overflow-hidden z-1"
       >
-        <img 
+        {/* <img 
           src="/images/featured/IMG_8628-2.jpg" 
           alt="Featured detail"
           className="bg-image w-full h-full object-cover"
-        />
+        /> */}
       </motion.div>
 
     </section>

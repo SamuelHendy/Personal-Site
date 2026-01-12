@@ -39,12 +39,11 @@ export default function WatchCard({
   onClick,
   isClickable
 }: WatchCardProps) {
-  const imageUrl = `https://shendy-albums.s3.eu-west-2.amazonaws.com/Watches/${modelId}.jpg`
+  const imageUrl = `https://placehold.co/600x800/e5e5e5/525252?text=${encodeURIComponent(brand)}`
 
   return (
     <div 
-      className={`rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] overflow-hidden h-full flex flex-col relative ${isClickable ? 'group' : ''}`}
-      style={{ width: '320px' }}
+      className={`rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] overflow-hidden flex flex-col relative ${isClickable ? 'group' : ''} md:w-[20vw] md:max-w-[320px]`}
       onClick={isClickable ? onClick : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
@@ -69,7 +68,7 @@ export default function WatchCard({
       )}
       
       {/* Image */}
-      <div className="bg-[var(--color-surface)] overflow-hidden" style={{ width: '320px', height: '400px' }}>
+      <div className="bg-[var(--color-surface)] overflow-hidden relative" style={{ aspectRatio: '3/4' }}>
         <img
           src={imageUrl}
           alt={`${brand} ${model}`}
@@ -78,7 +77,7 @@ export default function WatchCard({
       </div>
       
       {/* Info */}
-      <div className="flex-none p-4 space-y-2">
+      <div className="hidden md:flex flex-none flex-col p-4 space-y-2">
         <div>
           <h3 className={`text-xl font-bold ${darkName ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)]'}`}>
             {brand}
