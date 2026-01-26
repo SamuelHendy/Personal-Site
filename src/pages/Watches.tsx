@@ -45,7 +45,7 @@ export default function Watches() {
   const [selectedFilter, setSelectedFilter] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [scrollPosition, setScrollPosition] = useState(0)
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isSnappingRef = useRef(false)
   
   // Debug mode - set to true to show position and pile data on cards
@@ -195,7 +195,7 @@ export default function Watches() {
       .then(response => response.json())
       .then(data => {
         // Parse dates and add random pile data to each watch
-        const watchesWithDates = data.map((watch: any) => {
+        const watchesWithDates = data.map((watch: Watch) => {
           const [day, month, year] = watch.Obtained_Date.split('/')
           
           // Generate random values for pull and place piles
@@ -263,7 +263,7 @@ export default function Watches() {
     // First 4 cards start at positions 0, 1, 2, 3 (offset by -3)
     const scrollOffset = scrollPosition / scrollPerCard
     const cardScrollTurn = cardIndex * 1.0 // Card N starts after previous card completes (no overlap)
-    let rawPosition = 3 - (scrollOffset - cardScrollTurn) - 3 // Offset by -3 so first card starts at position 0
+    const rawPosition = (scrollOffset - cardScrollTurn) - 3 // Offset by -3 so first card starts at position 0
     
     // Apply easing to create brief pauses at positions 1 and 2
     // This slows down the progression near these key positions
@@ -630,7 +630,6 @@ export default function Watches() {
         {selectedWatch && (
           <WatchModal
             watch={selectedWatch}
-            imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/Watches/${selectedWatch.Model_Id}.jpg`}
             onClose={() => setSelectedWatch(null)}
             thumbnailRect={thumbnailRect}
           />

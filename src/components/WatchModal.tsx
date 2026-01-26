@@ -27,12 +27,11 @@ interface Watch {
 
 interface WatchModalProps {
   watch: Watch
-  imageUrl: string
   onClose: () => void
   thumbnailRect?: DOMRect
 }
 
-export default function WatchModal({ watch, imageUrl, onClose, thumbnailRect }: WatchModalProps) {
+export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModalProps) {
   useEffect(() => {
     // Prevent scrolling when modal is open
     const scrollY = window.scrollY
