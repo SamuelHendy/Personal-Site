@@ -13,24 +13,24 @@ export default function Hero() {
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.8, 0])
 
   const handleScrollDown = () => {
-    // Scroll one viewport height down with 1.8s duration (slower than default 1.2s)
-    window.scrollBy({
+    // Scroll to next section (1 viewport height) - absolute position
+    window.scrollTo({
       top: window.innerHeight,
       behavior: 'smooth'
     })
   }
 
   return (
-    <section ref={ref} className="min-h-screen flex items-center justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] relative">
+    <section ref={ref} className="relative flex items-center justify-center overflow-hidden" style={{ minHeight: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="relative w-full max-w-full md:max-w-[66%]">
         
         {/* Image - Placeholder for testing */}
-        <div className="relative aspect-[4/3] md:aspect-[16/9] bg-gradient-to-br from-gray-400 to-gray-600 overflow-hidden">
-          {/* <img 
-            src="/images/hero/IMG_8015.jpg" 
+        <div className="relative aspect-[4/3] md:aspect-[16/9] overflow-hidden">
+          <img 
+            src="/images/hero/IMG_8015_web.webp" 
             alt="Hero"
             className="bg-image w-full h-full object-cover scale-125 md:scale-100"
-          /> */}
+          />
         </div>
         
         {/* Text Box - Top Left with Parallax */}
@@ -45,7 +45,7 @@ export default function Hero() {
             Software/DevOps Engineer
           </h2>
           <h2 className="text-base md:text-xl text-[var(--color-text-secondary)] text-printed">
-            Prolific Project Starter
+            Professional Project Starter
           </h2>
         </motion.div>
       </div>
@@ -53,7 +53,7 @@ export default function Hero() {
       {/* Scroll Down Button - Now positioned relative to section */}
       <button
         onClick={handleScrollDown}
-        className="rough-border absolute bottom-[5.5%] md:bottom-32 left-1/2 -translate-x-1/2 w-16 h-16 border border-[var(--color-text-primary)] bg-transparent hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-xl rotate-90"
+        className="rough-border absolute bottom-[6vh] md:bottom-32 left-1/2 -translate-x-1/2 w-16 h-16 border border-[var(--color-text-primary)] bg-transparent hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-xl rotate-90"
         style={{ fontFamily: 'monospace' }}
         aria-label="Scroll down"
       >

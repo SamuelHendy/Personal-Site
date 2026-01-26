@@ -11,8 +11,8 @@ export default function MainNav() {
   })
 
   const handleScrollDown = () => {
-    // Scroll one viewport height down with slower speed
-    window.scrollBy({ top: window.innerHeight, behavior: 'smooth' })
+    // Scroll to next section (2 viewport heights) - absolute position
+    window.scrollTo({ top: window.innerHeight * 2, behavior: 'smooth' })
   }
   
   // Parallax transforms
@@ -23,7 +23,7 @@ export default function MainNav() {
   const panoramicX = useTransform(scrollYProgress, [0, 1], [-40, 40])
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-lg)] pb-[var(--spacing-xl)] relative">
+    <section ref={ref} className="flex flex-col justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-lg)] pb-[var(--spacing-xl)] relative overflow-x-hidden" style={{ minHeight: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="relative max-w-[384px] md:max-w-none mx-auto w-full">
       <div className="w-full md:max-w-[85%] md:mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-32">
         
@@ -51,36 +51,41 @@ export default function MainNav() {
         </div>
 
         {/* Right Side - Photo with Social Icons */}
-        <div className="relative order-1 md:order-2 w-full md:w-auto md:ml-auto">
+        <div className="relative order-1 md:order-2 w-full md:ml-auto">
           {/* Photo - Mobile version with offset to counteract parallax */}
           <motion.div 
             style={{ x: photoX }}
-            className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-blue-600 md:hidden translate-x-[20px]"
+            className="aspect-[2/1] md:hidden translate-x-[20px]"
           >
-            {/* <img 
-              src="/images/main-nav/IMG_8647.jpg" 
+            <img 
+              src="/images/main-nav/IMG_8647_web.webp" 
               alt="Profile"
               className="bg-image w-full h-full object-cover"
-            /> */}
+            />
           </motion.div>
           {/* Photo - Desktop version with full parallax */}
           <motion.div 
             style={{ x: photoX }}
-            className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-blue-600 ml-8 hidden md:block"
+            className="aspect-[2/1] ml-8 hidden md:block"
           >
-            {/* <img 
-              src="/images/main-nav/IMG_8647.jpg" 
+            <img 
+              src="/images/main-nav/IMG_8647_web.webp" 
               alt="Profile"
               className="bg-image w-full h-full object-cover"
-            /> */}
+            />
           </motion.div>
 
           {/* Social Icons Box - Overlapping bottom left */}
           <motion.div 
             style={{ y: socialY }}
-            className="rough-border absolute -top-[60vh] md:-top-135 md:top-auto md:bottom-0 md:left-0 md:right-auto -right-[10px] md:right-auto -translate-x-0 md:-translate-x-[20%] translate-y-0 md:translate-y-[20%] border border-[var(--color-text-primary)] p-[var(--spacing-sm)] md:p-[var(--spacing-md)]"
+            className="absolute -top-[50vh] md:-top-135 md:top-auto md:bottom-0 md:left-0 md:right-auto -right-[10px] md:right-auto -translate-x-0 md:-translate-x-[20%] translate-y-0 md:translate-y-[20%] w-[208px]"
           >
-            <div className="grid grid-cols-3 gap-[var(--spacing-sm)]">
+            {/* Rough border div - sibling approach */}
+            <div className="rough-border absolute inset-0 border border-[var(--color-text-primary)] bg-[var(--color-background)] pointer-events-none" />
+            
+            {/* Content div */}
+            <div className="relative p-[var(--spacing-sm)] md:p-[var(--spacing-md)]">
+              <div className="grid grid-cols-3 gap-[var(--spacing-sm)]">
               {/* Row 1 - 3 icons */}
               {/* LinkedIn */}
               <a 
@@ -135,6 +140,7 @@ export default function MainNav() {
                 <Music size={20} />
               </a>
             </div>
+            </div>
           </motion.div>
         </div>
 
@@ -146,13 +152,13 @@ export default function MainNav() {
           style={{ x: panoramicX }}
           className="w-full md:w-[80%] ml-0 md:-ml-[8%]"
         >
-          <div className="aspect-[2/1] md:aspect-[9/1] bg-gradient-to-r from-green-400 to-green-600">
-            {/* <img 
-              src="/images/main-nav/IMG_7916.jpg" 
+          <div className="aspect-[2/1] md:aspect-[9/1]">
+            <img 
+              src="/images/main-nav/IMG_7916_web.webp" 
               alt="Wide panoramic"
               className="bg-image w-full h-full object-cover"
               style={{ objectPosition: 'center 37%' }}
-            /> */}
+            />
           </div>
         </motion.div>
       </div>
@@ -162,7 +168,7 @@ export default function MainNav() {
       {/* Scroll Down Button - Positioned at bottom of MainNav section */}
       <button
         onClick={handleScrollDown}
-        className="rough-border absolute bottom-[5.5%] md:bottom-32 left-1/2 -translate-x-1/2 w-16 h-16 border border-[var(--color-text-primary)] bg-transparent hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-xl rotate-90"
+        className="rough-border absolute bottom-[6vh] md:bottom-32 left-1/2 -translate-x-1/2 w-16 h-16 border border-[var(--color-text-primary)] bg-transparent hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-xl rotate-90"
         style={{ fontFamily: 'monospace' }}
         aria-label="Scroll down"
       >
