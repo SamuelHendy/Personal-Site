@@ -14,13 +14,13 @@ interface Watch {
   Obtained_Date: string
   Description?: string
   Purchase_Price?: string | number
-  Aquired_From?: string
+  Acquired_From?: string
   Beats_Per_Hour?: number
   Glass?: string
   Case_Material?: string
   Caseback_Window?: boolean
   Lug_Width?: number
-  Aquired_Condition?: string
+  Acquired_Condition?: string
   Is_Favourite?: boolean
 }
 
@@ -32,7 +32,23 @@ interface MobileWatchModalProps {
 
 export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWatchModalProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
+  const [imageSrc, setImageSrc] = useState(imageUrl)
   
+  // Calculate image height based on 3:4 aspect ratio
+  const imageHeight = (window.innerWidth * 4) / 3
+  // When collapsed, show only the portion below the image
+  const collapsedHeight = viewportHeight - imageHeight
+  // When expanded, show 85vh of content
+  const expandedHeight = viewportHeight * 0.85
+
+  // Track viewport height changes
+  useEffect(() => {
+    const handleResize = () => setViewportHeight(window.innerHeight)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // Lock scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -69,20 +85,24 @@ export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWat
       {/* Image - 3:4 aspect ratio at top, stays fixed */}
       <div className="w-full bg-[var(--color-surface)] overflow-hidden flex-shrink-0" style={{ aspectRatio: '3/4' }} onClick={onClose}>
         <img
-          src="https://placehold.co/600x800/e5e5e5/525252?text=Watch"
+          src={imageSrc}
           alt={`${watch.Brand} ${watch.Model}`}
           className="w-full h-full object-cover"
+          onError={() => setImageSrc(`https://placehold.co/600x800/e5e5e5/525252?text=${watch.Model}`)}
         />
       </div>
 
-      {/* Content area - draggable, overlays image when expanded */}
+      {/* Content area - overlays image when expanded */}
       <motion.div 
-        className="absolute left-0 right-0 flex flex-col bg-[var(--color-background)]"
+        className="absolute left-0 right-0 bottom-0 flex flex-col bg-[var(--color-background)]"
         style={{ 
-          height: '85vh',
-          bottom: isExpanded ? 0 : '-45vh'
+          height: isExpanded ? `${expandedHeight}px` : `${collapsedHeight}px`
         }}
         onClick={(e) => e.stopPropagation()}
+        animate={{ 
+          height: isExpanded ? `${expandedHeight}px` : `${collapsedHeight}px`
+        }}
+        transition={{ type: "spring", damping: 30, stiffness: 500 }}
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.1}
@@ -98,10 +118,6 @@ export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWat
             setIsExpanded(isExpanded)
           }
         }}
-        animate={{ 
-          bottom: isExpanded ? 0 : '-45vh'
-        }}
-        transition={{ type: "spring", damping: 30, stiffness: 500 }}
       >
         {/* Drag handle bar */}
         <div className="flex-shrink-0 py-3 flex items-center justify-center border-b border-[var(--color-text-primary)]/20 cursor-grab active:cursor-grabbing">
@@ -109,7 +125,7 @@ export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWat
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 rough-border">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Header with Favourite star */}
         <div className="relative">
           {watch.Is_Favourite && (
@@ -196,16 +212,16 @@ export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWat
               <span className="text-[var(--color-text-secondary)]">Obtained:</span>
               <span className="font-semibold text-[var(--color-text-primary)]">{watch.Obtained_Date}</span>
             </div>
-            {watch.Aquired_From && (
+            {watch.Acquired_From && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">From:</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Aquired_From}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Acquired_From}</span>
               </div>
             )}
-            {watch.Aquired_Condition && (
+            {watch.Acquired_Condition && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Condition:</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Aquired_Condition}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Acquired_Condition}</span>
               </div>
             )}
             {watch.Purchase_Price && (

@@ -20,13 +20,13 @@ interface Watch {
   Dark_Name: boolean
   Description?: string
   Purchase_Price?: string | number
-  Aquired_From?: string
+  Acquired_From?: string
   Beats_Per_Hour?: number
   Glass?: string
   Case_Material?: string
   Caseback_Window?: boolean
   Lug_Width?: number
-  Aquired_Condition?: string
+  Acquired_Condition?: string
   parsedDate: Date
   Is_Favourite?: boolean
   pull_pile: {
@@ -58,20 +58,26 @@ export default function Watches() {
   // Mobile carousel state
   const [mobileCardIndex, setMobileCardIndex] = useState(0)
   const [mobileModalWatch, setMobileModalWatch] = useState<Watch | null>(null)
-  const [swipeDirection, setSwipeDirection] = useState<'forward' | 'backward'>('forward')
+  const [animatingCardIndex, setAnimatingCardIndex] = useState<number | null>(null)
 
   // Mobile navigation functions
   const goToNextCard = () => {
     if (mobileCardIndex < filteredWatches.length - 1) {
-      setSwipeDirection('forward')
+      // When swiping forward, the NEW card (next index) should be on top
+      setAnimatingCardIndex(mobileCardIndex + 1)
       setMobileCardIndex(mobileCardIndex + 1)
+      // Clear animating card after animation completes
+      setTimeout(() => setAnimatingCardIndex(null), 600)
     }
   }
 
   const goToPreviousCard = () => {
     if (mobileCardIndex > 0) {
-      setSwipeDirection('backward')
+      // When swiping backward, the CURRENT card should be on top
+      setAnimatingCardIndex(mobileCardIndex)
       setMobileCardIndex(mobileCardIndex - 1)
+      // Clear animating card after animation completes
+      setTimeout(() => setAnimatingCardIndex(null), 600)
     }
   }
 
@@ -314,7 +320,7 @@ export default function Watches() {
         </div>
 
         {/* Filters and Search - Single Line */}
-        <div className="mb-6 space-y-3 px-[var(--spacing-md)] md:px-[var(--spacing-lg)]">
+        <div className="mb-16 md:mb-6 space-y-3 px-[var(--spacing-md)] md:px-[var(--spacing-lg)]">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           {/* Search Box - First */}
           <div className="rough-border relative w-full md:flex-1 md:min-w-[400px] md:max-w-2xl border border-[var(--color-text-primary)] bg-[var(--color-background)]">
@@ -348,8 +354,8 @@ export default function Watches() {
           </div>
         </div>
 
-        {/* Results count */}
-        <p className="text-sm text-[var(--color-text-secondary)]">
+        {/* Results count - Desktop only, mobile version is in carousel */}
+        <p className="hidden md:block text-sm text-[var(--color-text-secondary)] md:pb-8">
           Showing {filteredWatches.length} of {watches.length} watches
         </p>
       </div>
@@ -523,75 +529,95 @@ export default function Watches() {
 
       {/* Mobile Carousel - Visible only on mobile */}
       {!loading && filteredWatches.length > 0 && (
-        <div className="md:hidden fixed top-[360px] bottom-0 left-0 right-0 flex flex-col items-center justify-center overflow-hidden py-8">
-          {/* Swipe indicator */}
-          <div className="mb-4 text-[var(--color-text-secondary)] flex items-center gap-2">
-            <span className="text-2xl">←</span>
-            <span className="text-sm uppercase tracking-wider">Swipe</span>
-            <div className="h-px w-16 bg-[var(--color-text-secondary)]"></div>
+        <div className="md:hidden fixed top-[375px] bottom-0 left-0 right-0 flex flex-col overflow-hidden">
+          {/* Header with count, tap hint, and swipe indicator */}
+          <div className="relative flex items-center justify-between pl-8 pr-6 py-4">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              {mobileCardIndex + 1} of {filteredWatches.length}
+            </p>
+            <p className="absolute left-1/2 -translate-x-1/2 text-xs text-[var(--color-text-secondary)]">
+              Tap to view
+            </p>
+            <div className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1">
+              <span className="text-lg text-[var(--color-text-primary)] -translate-y-0.5">←</span>
+              <span>Swipe</span>
+              <span className="text-lg text-[var(--color-text-primary)] -translate-y-0.5">→</span>
+            </div>
           </div>
           
           <motion.div 
             className="relative flex-1 w-full flex items-center justify-center touch-pan-y"
             onPanEnd={(_, info) => {
               if (info.offset.x < -50) {
-                // Swipe left - bring new card from right
+                // Swipe left - bring new card from right stack to center stack
                 goToNextCard()
               } else if (info.offset.x > 50) {
-                // Swipe right - remove current card to right
+                // Swipe right - move current card back to right stack
                 goToPreviousCard()
               }
             }}
           >
-            {/* All Previous Cards - Stacked in center with place pile transformations */}
-            {Array.from({ length: mobileCardIndex }).map((_, i) => {
-              const watch = filteredWatches[i]
+            {/* Render all cards with position-based animations */}
+            {filteredWatches.map((watch, index) => {
               const placePile = watch.place_pile || { vertical: 0, tilt: 0 }
+              const pullPile = watch.pull_pile || { vertical: 0, tilt: 0 }
+              
+              let x = 0
+              let y = 0
+              let rotate = 0
+              let zIndex = 0
+              let opacity = 1
+              
+              // Check if this card is currently animating
+              const isAnimating = animatingCardIndex === index
+              
+              if (index < mobileCardIndex) {
+                // Viewed cards - on-screen stack (center) with place_pile transformations
+                // Use 1000+ range so always above off-screen stack
+                x = 0
+                y = placePile.vertical
+                rotate = placePile.tilt
+                zIndex = isAnimating ? 3000 : 1000 + index
+                opacity = 1
+              } else if (index === mobileCardIndex) {
+                // Current card - on top of everything
+                x = 0
+                y = 0
+                rotate = 0
+                zIndex = 2000
+                opacity = 1
+              } else {
+                // Unviewed cards - off-screen stack (right) with pull_pile transformations
+                // Use 0-500 range so always below on-screen stack
+                // Cards closer to current (lower index) should be on top
+                x = window.innerWidth * 0.6 + (window.innerWidth * 0.6)
+                y = pullPile.vertical
+                rotate = pullPile.tilt
+                zIndex = isAnimating ? 3000 : 500 - (index - mobileCardIndex)
+                opacity = 1
+              }
+              
               return (
-                <div 
-                  key={`prev-${watch.Model_Id}`}
-                  className="absolute w-[70%] h-full flex items-center justify-center pointer-events-none" 
-                  style={{ 
-                    transform: `translateY(${placePile.vertical}px) rotate(${placePile.tilt}deg)`,
-                    zIndex: i
+                <motion.div
+                  key={watch.Model_Id}
+                  className="absolute w-[70%] h-full flex items-center justify-center"
+                  animate={{
+                    x,
+                    y,
+                    rotate,
+                    zIndex,
+                    opacity
                   }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  style={{ pointerEvents: index === mobileCardIndex ? 'auto' : 'none' }}
                 >
                   <MobileWatchCard
                     modelId={watch.Model_Id}
+                    onClick={index === mobileCardIndex ? () => setMobileModalWatch(watch) : undefined}
                   />
-                </div>
+                </motion.div>
               )
             })}
-
-            {/* Current Card - Slides in, on top of stack */}
-            <motion.div
-              key={mobileCardIndex}
-              variants={{
-                enter: (direction: 'forward' | 'backward') => ({
-                  x: direction === 'forward' ? window.innerWidth : 0,
-                  scale: direction === 'forward' ? 1 : 1.05
-                }),
-                center: {
-                  x: 0,
-                  scale: 1
-                },
-                exit: (direction: 'forward' | 'backward') => ({
-                  x: direction === 'forward' ? -window.innerWidth : window.innerWidth
-                })
-              }}
-              custom={swipeDirection}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-[70%] h-full flex justify-center"
-              style={{ zIndex: mobileCardIndex + 10 }}
-            >
-              <MobileWatchCard
-                modelId={filteredWatches[mobileCardIndex].Model_Id}
-                onClick={() => setMobileModalWatch(filteredWatches[mobileCardIndex])}
-              />
-            </motion.div>
           </motion.div>
         </div>
       )}
