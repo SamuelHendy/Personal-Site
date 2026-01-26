@@ -122,7 +122,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
           <div className="text-white drop-shadow-lg text-xs md:text-sm">
             {children}
             {showLastUpdated && lastUpdated && (
-              <p className="text-xs opacity-70 mt-1">Last Updated: {lastUpdated}</p>
+              <p className="text-xs opacity-70 mt-1 text-rough">Last Updated: {lastUpdated}</p>
             )}
           </div>
         </motion.div>

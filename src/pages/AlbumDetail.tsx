@@ -83,34 +83,43 @@ export default function AlbumDetail() {
       </div>
 
       {/* Image grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="max-w-[2000px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {imagePaths.map((imagePath: string, index: number) => {
           const imageUrl = `https://shendy-albums.s3.eu-west-2.amazonaws.com/${imagePath}`
           return (
             <div
               key={index}
-              className="rough-border aspect-square border border-[var(--color-text-primary)] bg-[var(--color-surface)] overflow-hidden hover:scale-105 transition-transform cursor-pointer"
+              className="relative aspect-square overflow-hidden cursor-pointer"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
                 setThumbnailRect(rect)
                 setSelectedImage(imageUrl)
               }}
             >
-              <motion.img
-                src={imageUrl}
-                alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: loadedImages.has(index) ? 1 : 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                onLoad={() => {
-                  setLoadedImages(prev => new Set(prev).add(index))
-                }}
-              />
+              {/* Border div with rough effect - absolute so it doesn't take layout space */}
+              <div className="rough-border absolute inset-0 border border-[var(--color-text-primary)] pointer-events-none"></div>
+              {/* Image content */}
+              <div className="relative w-full h-full overflow-hidden p-2">
+                <div className="w-full h-full overflow-hidden">
+                <motion.img
+                  src={imageUrl}
+                  alt={`Photo ${index + 1}`}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform"
+                  loading="lazy"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: loadedImages.has(index) ? 1 : 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  onLoad={() => {
+                    setLoadedImages(prev => new Set(prev).add(index))
+                  }}
+                />
+                </div>
+              </div>
             </div>
           )
         })}
+        </div>
       </div>
 
       {/* Image Modal */}

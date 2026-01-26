@@ -14,19 +14,24 @@ export default function AlbumCard({ name, thumbnail, img_count, last_updated }: 
   
   return (
     <Link to={`/albums/${name}`} className="block">
-      <div className="rough-border border border-[var(--color-text-primary)] p-2 hover:bg-[var(--color-surface)] transition-colors cursor-pointer">
-        <DirectionAwareHover
-          imageUrl={imageUrl}
-          overlayImageUrl={imageUrl}
-          className="aspect-square"
-          showGradient={true}
-          showLastUpdated={true}
-          lastUpdated={last_updated}
-          alwaysShowText={true}
-        >
-          <p className="text-sm font-bold">{name.replace(/_/g, ' ')}</p>
-          <p className="text-xs opacity-80">{img_count} photos</p>
-        </DirectionAwareHover>
+      <div className="hover:bg-[var(--color-surface)] transition-colors cursor-pointer">
+        {/* Border div with rough effect */}
+        <div className="rough-border border border-[var(--color-text-primary)] p-2 aspect-square"></div>
+        {/* Image content div overlaid on top with negative margin */}
+        <div className="-mt-[100%] p-2">
+          <DirectionAwareHover
+            imageUrl={imageUrl}
+            overlayImageUrl={imageUrl}
+            className="aspect-square"
+            showGradient={true}
+            showLastUpdated={true}
+            lastUpdated={last_updated}
+            alwaysShowText={true}
+          >
+            <p className="text-sm font-bold text-rough">{name.replace(/_/g, ' ')}</p>
+            <p className="text-xs opacity-80 text-rough">{img_count} photos</p>
+          </DirectionAwareHover>
+        </div>
       </div>
     </Link>
   )

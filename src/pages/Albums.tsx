@@ -38,7 +38,8 @@ export default function Albums() {
           <h1 className="text-4xl font-bold text-printed">Albums</h1>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="max-w-[2000px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {loading ? (
           // Loading placeholders
           Array.from({ length: 8 }).map((_, i) => (
@@ -62,6 +63,7 @@ export default function Albums() {
             />
           ))
         )}
+        </div>
       </div>
     </div>
   )
