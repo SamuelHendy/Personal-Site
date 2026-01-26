@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Hide scrollbar globally */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
@@ -115,22 +129,122 @@ a, button, [role="button"] {
     -0.5px -0.5px 0px rgba(0, 0, 0, 0.15);
 }
 
-/* Rough border effect */
+/* Rough border effect - responsive to screen resolution */
 .rough-border {
-  filter: url(#rough-border);
+  filter: url(#rough-border-mobile);
+}
+
+/* Tablet/Laptop (768px+) */
+@media (min-width: 768px) {
+  .rough-border {
+    filter: url(#rough-border-tablet);
+  }
+}
+
+/* 1080p displays (1280px+) */
+@media (min-width: 1280px) {
+  .rough-border {
+    filter: url(#rough-border-1080p);
+  }
+}
+
+/* 2K/1440p displays (1921px+) */
+@media (min-width: 1921px) {
+  .rough-border {
+    filter: url(#rough-border-2k);
+  }
+}
+
+/* Firefox-specific: disable SVG filters due to rendering issues */
+@-moz-document url-prefix() {
+  .rough-border {
+    filter: none;
+  }
 }
 
 /* Rough text effect without border - applies filter to text/content */
 .text-rough {
-  filter: url(#roughen);
+  -webkit-filter: url(#roughen-mobile);
+  filter: url(#roughen-mobile);
+}
+
+/* Tablet/Laptop (768px+) */
+@media (min-width: 768px) {
+  .text-rough {
+    -webkit-filter: url(#roughen-tablet);
+    filter: url(#roughen-tablet);
+  }
+  .text-printed {
+    filter: url('#roughen-tablet') contrast(1.1);
+  }
+}
+
+/* 1080p displays (1280px+) */
+@media (min-width: 1280px) {
+  .text-rough {
+    -webkit-filter: url(#roughen-1080p);
+    filter: url(#roughen-1080p);
+  }
+  .text-printed {
+    filter: url('#roughen-1080p') contrast(1.1);
+  }
+}
+
+/* 2K/1440p displays (1921px+) */
+@media (min-width: 1921px) {
+  .text-rough {
+    -webkit-filter: url(#roughen-2k);
+    filter: url(#roughen-2k);
+  }
+  .text-printed {
+    filter: url('#roughen-2k') contrast(1.1);
+  }
+}
+
+/* Firefox-specific: disable text filters */
+@-moz-document url-prefix() {
+  .text-rough {
+    filter: none;
+  }
+  .text-printed {
+    filter: contrast(1.1);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
   .text-printed {
-    filter: url('#roughen') contrast(1.05);
+    filter: url('#roughen-mobile') contrast(1.05);
     text-shadow: 
       0.5px 0.5px 0px rgba(255, 255, 255, 0.15),
       -0.5px -0.5px 0px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Tablet/Laptop in dark mode */
+  @media (min-width: 768px) {
+    .text-printed {
+      filter: url('#roughen-tablet') contrast(1.05);
+    }
+  }
+  
+  /* 1080p in dark mode */
+  @media (min-width: 1280px) {
+    .text-printed {
+      filter: url('#roughen-1080p') contrast(1.05);
+    }
+  }
+  
+  /* 2K/1440p in dark mode */
+  @media (min-width: 1921px) {
+    .text-printed {
+      filter: url('#roughen-2k') contrast(1.05);
+    }
+  }
+  
+  /* Firefox-specific: disable filters in dark mode */
+  @-moz-document url-prefix() {
+    .text-printed {
+      filter: contrast(1.05);
+    }
   }
 
   /* Apply grayscale filter only to background/hero images */

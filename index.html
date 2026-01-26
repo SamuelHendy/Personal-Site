@@ -10,20 +10,60 @@
     <title>personal-site</title>
   </head>
   <body>
+    <!-- 
+      This website was built with Windsurf using Claude Sonnet 4.5 as an experiment.
+      Tech stack: 
+      Frontend - React + React Router + Framer Motion + Tailwind CSS + Vite
+      Backend - Python Lambda + API Gateway + S3
+      Served through a CloudFront distribution
+      
+      AI has been used to develop this site with high-touch code reviewing,
+      In a professional project, I would be wary of putting this much faith in AI.
+      This is a test to see whether, with guidance but not in depth code reviews,
+      AI can be trusted to build a highly customised/tweaked project with good form.
+      
+      If you're reading this - thanks for checking out the source! Feel free to reach 
+      out if you have questions about the development process.
+    -->
+    
     <!-- SVG filter for printed/rough text effect -->
     <svg style="position: absolute; width: 0; height: 0;">
       <defs>
-        <filter id="roughen">
-          <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="1" result="noise" />
+        <filter id="roughen-mobile">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-tablet">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-1080p">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-2k">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.1" xChannelSelector="R" yChannelSelector="G" />
         </filter>
         <filter id="roughness">
           <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" />
         </filter>
-        <filter id="rough-border">
+        <filter id="rough-border-mobile">
           <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.3" />
+        </filter>
+        <filter id="rough-border-tablet">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" />
+        </filter>
+        <filter id="rough-border-1080p">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6" />
+        </filter>
+        <filter id="rough-border-2k">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.8" />
         </filter>
       </defs>
     </svg>
