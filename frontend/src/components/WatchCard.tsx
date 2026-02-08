@@ -1,7 +1,6 @@
 interface WatchCardProps {
   brand: string
   model: string
-  modelId: string
   dialColour: string
   caseWidth: number
   movementType: string

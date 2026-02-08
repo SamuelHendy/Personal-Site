@@ -45,7 +45,6 @@ export default function Watches() {
   const [selectedFilter, setSelectedFilter] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [scrollPosition, setScrollPosition] = useState(0)
-  // const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isSnappingRef = useRef(false)
   
   // Debug mode - set to true to show position and pile data on cards
@@ -498,7 +497,6 @@ export default function Watches() {
                 <WatchCard
                   brand={watch.Brand}
                   model={watch.Model}
-                  modelId={watch.Model_Id}
                   dialColour={watch.Dial_Colour}
                   caseWidth={watch.Case_Width}
                   movementType={watch.Movement_Type}
@@ -641,7 +639,6 @@ export default function Watches() {
         {mobileModalWatch && (
           <MobileWatchModal
             watch={mobileModalWatch}
-            imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/Watches/${mobileModalWatch.Model_Id}.jpg`}
             onClose={() => setMobileModalWatch(null)}
           />
         )}

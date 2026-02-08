@@ -26,11 +26,10 @@ interface Watch {
 
 interface MobileWatchModalProps {
   watch: Watch
-  imageUrl: string
   onClose: () => void
 }
 
-export default function MobileWatchModal({ watch, imageUrl, onClose }: MobileWatchModalProps) {
+export default function MobileWatchModal({ watch, onClose }: MobileWatchModalProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   const [imageSrc, setImageSrc] = useState(imageUrl)
