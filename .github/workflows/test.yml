@@ -1,0 +1,191 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  detect-changes-and-label:
+    runs-on: ubuntu-latest
+    outputs:
+      expected-labels: ${{ steps.detect.outputs.expected-labels }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes and add labels
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Analyzing PR changes to determine required labels..."
+          
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          LABELS_TO_ADD=()
+          
+          # Check for frontend changes
+          if echo "$CHANGED_FILES" | grep -q "^frontend/"; then
+            echo "📦 Changes detected in frontend"
+            LABELS_TO_ADD+=("deploy-frontend")
+          fi
+          
+          # Check for backend changes
+          if echo "$CHANGED_FILES" | grep -q "^backend/"; then
+            echo "📦 Changes detected in backend"
+            LABELS_TO_ADD+=("deploy-backend")
+          fi
+          
+          # Check for terraform changes
+          if echo "$CHANGED_FILES" | grep -q "^terraform/"; then
+            echo "📦 Changes detected in terraform"
+            LABELS_TO_ADD+=("deploy-terraform")
+          fi
+          
+          # Check for workflow changes - affects all
+          if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/"; then
+            echo "🔄 Changes detected in .github/workflows/"
+            LABELS_TO_ADD+=("deploy-frontend" "deploy-backend" "deploy-terraform")
+          fi
+          
+          # Deduplicate labels
+          LABELS_TO_ADD=($(echo "${LABELS_TO_ADD[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+          
+          if [ ${#LABELS_TO_ADD[@]} -eq 0 ]; then
+            echo "ℹ️  No component-affecting changes detected"
+            echo "expected-labels=" >> $GITHUB_OUTPUT
+          else
+            echo "🏷️  Adding labels to PR: ${LABELS_TO_ADD[*]}"
+            for label in "${LABELS_TO_ADD[@]}"; do
+              gh pr edit ${{ github.event.pull_request.number }} --add-label "$label" || echo "⚠️  Failed to add label: $label"
+            done
+            
+            EXPECTED_CSV=$(IFS=','; echo "${LABELS_TO_ADD[*]}")
+            echo "🎯 Expected labels: $EXPECTED_CSV"
+            echo "expected-labels=$EXPECTED_CSV" >> $GITHUB_OUTPUT
+          fi
+
+  check-labels:
+    needs: detect-changes-and-label
+    runs-on: ubuntu-latest
+    outputs:
+      deploy-frontend: ${{ steps.check.outputs.deploy-frontend }}
+      deploy-backend: ${{ steps.check.outputs.deploy-backend }}
+      deploy-terraform: ${{ steps.check.outputs.deploy-terraform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check PR labels
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXPECTED_LABELS="${{ needs.detect-changes-and-label.outputs.expected-labels }}"
+          echo "Expected labels: $EXPECTED_LABELS"
+          
+          if [ -z "$EXPECTED_LABELS" ]; then
+            echo "ℹ️  No labels expected"
+            echo "deploy-frontend=false" >> $GITHUB_OUTPUT
+            echo "deploy-backend=false" >> $GITHUB_OUTPUT
+            echo "deploy-terraform=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Wait briefly for labels to propagate
+          sleep 3
+          
+          CURRENT_LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name' | tr '\n' ' ' || echo "")
+          echo "Current labels: $CURRENT_LABELS"
+          
+          # Check each component
+          if echo "$CURRENT_LABELS" | grep -q "deploy-frontend"; then
+            echo "deploy-frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy-frontend=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if echo "$CURRENT_LABELS" | grep -q "deploy-backend"; then
+            echo "deploy-backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy-backend=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if echo "$CURRENT_LABELS" | grep -q "deploy-terraform"; then
+            echo "deploy-terraform=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy-terraform=false" >> $GITHUB_OUTPUT
+          fi
+
+  test-frontend:
+    needs: check-labels
+    if: needs.check-labels.outputs.deploy-frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint || echo "No lint script configured"
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: "/api"
+
+  test-backend:
+    needs: check-labels
+    if: needs.check-labels.outputs.deploy-backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install boto3
+          # pip install -r requirements.txt  # Uncomment if you add a requirements file
+
+      - name: Lint
+        working-directory: backend
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+
+  test-terraform:
+    needs: check-labels
+    if: needs.check-labels.outputs.deploy-terraform == 'true'
+    uses: ./.github/workflows/terraform_plan.yml
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}

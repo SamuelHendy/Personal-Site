@@ -1,0 +1,208 @@
+# Lambda functions for API
+# Note: Lambdas are created with placeholder code. 
+# Actual code is deployed via deploy_backend.yml workflow.
+
+locals {
+  lambda_runtime = "python3.11"
+  lambda_timeout = 30
+  lambda_memory  = 256
+}
+
+# Placeholder zip for initial Lambda creation
+data "archive_file" "placeholder" {
+  type        = "zip"
+  output_path = "${path.module}/builds/placeholder.zip"
+
+  source {
+    content  = <<-EOF
+      def lambda_handler(event, context):
+          return {
+              'statusCode': 200,
+              'body': '{"message": "Placeholder - deploy backend to update"}'
+          }
+    EOF
+    filename = "handler.py"
+  }
+}
+
+# Health check lambda
+resource "aws_lambda_function" "health" {
+  function_name = "personal-api-health"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Albums lambda
+resource "aws_lambda_function" "albums" {
+  function_name = "personal-api-albums"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      BUCKET_NAME = var.albums_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Album detail lambda
+resource "aws_lambda_function" "album_detail" {
+  function_name = "personal-api-album-detail"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      BUCKET_NAME = var.albums_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Recently updated lambda
+resource "aws_lambda_function" "recently_updated" {
+  function_name = "personal-api-recently-updated"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      BUCKET_NAME = var.albums_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Watches lambda
+resource "aws_lambda_function" "watches" {
+  function_name = "personal-api-watches"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME  = var.watches_table_name
+      BUCKET_NAME = var.watches_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Watch detail lambda
+resource "aws_lambda_function" "watch_detail" {
+  function_name = "personal-api-watch-detail"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME  = var.watches_table_name
+      BUCKET_NAME = var.watches_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Fishtank residents lambda
+resource "aws_lambda_function" "fishtank_residents" {
+  function_name = "personal-api-fishtank-residents"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME  = var.fishtank_residents_table_name
+      BUCKET_NAME = var.fishtank_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Fishtank timeline lambda
+resource "aws_lambda_function" "fishtank_timeline" {
+  function_name = "personal-api-fishtank-timeline"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = data.archive_file.placeholder.output_path
+  source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME  = var.fishtank_timeline_table_name
+      BUCKET_NAME = var.fishtank_bucket_name
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}

@@ -1,0 +1,94 @@
+name: Terraform Apply (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'Pull request number'
+        type: string
+        required: true
+      pr_head_ref:
+        description: 'PR head branch ref'
+        type: string
+        required: true
+      pr_head_sha:
+        description: 'PR head commit SHA'
+        type: string
+        required: true
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'AWS Role ARN for OIDC'
+        required: true
+
+env:
+  TERRAFORM_VERSION: "1.14.5"
+  TF_IN_AUTOMATION: "true"
+  AWS_REGION: "eu-west-2"
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  terraform_apply:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHub-OIDC-TERRAFORM-APPLY
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Get Plan Workflow Run ID
+        id: get-run-id
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'test.yml',
+              branch: '${{ inputs.pr_head_ref }}',
+              status: 'completed',
+              event: 'pull_request'
+            });
+            const currentSha = '${{ inputs.pr_head_sha }}';
+            console.log('Looking for plan with SHA:', currentSha);
+            
+            const run = runs.workflow_runs.find(r => r.head_sha === currentSha);
+            if (!run) {
+              core.setFailed('No matching test workflow run found for this PR');
+              return null;
+            }
+            console.log('Found matching run:', run.id);
+            return run.id;
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.pr_number }}-tf-plan
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: terraform
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.get-run-id.outputs.result }}
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -input=false -no-color tfplan
