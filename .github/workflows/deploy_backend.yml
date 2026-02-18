@@ -1,0 +1,53 @@
+name: Deploy Backend (Reusable)
+
+on:
+  workflow_call:
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'AWS Role ARN for OIDC'
+        required: true
+
+env:
+  AWS_REGION: "eu-west-2"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy_lambdas:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lambda:
+          - personal_api_health
+          - personal_api_albums
+          - personal_api_album_detail
+          - personal_api_recently_updated
+          - personal_api_watches
+          - personal_api_watch_detail
+          - personal_api_fishtank_residents
+          - personal_api_fishtank_timeline
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHub-OIDC-LAMBDA-DEPLOY
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Package Lambda
+        run: |
+          cd backend/${{ matrix.lambda }}
+          zip -r ../../${{ matrix.lambda }}.zip .
+
+      - name: Deploy Lambda
+        run: |
+          FUNCTION_NAME=$(echo "${{ matrix.lambda }}" | sed 's/_/-/g')
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://${{ matrix.lambda }}.zip
