@@ -18,8 +18,8 @@ resource "aws_s3_bucket_policy" "ui" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontAccess"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontAccess"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
