@@ -44,9 +44,9 @@ module "app" {
   aws_region  = var.aws_region
 
   # Content bucket references
-  albums_bucket_name    = module.content.albums_bucket_name
-  watches_bucket_name   = module.content.watches_bucket_name
-  fishtank_bucket_name  = module.content.fishtank_bucket_name
+  albums_bucket_name   = module.content.albums_bucket_name
+  watches_bucket_name  = module.content.watches_bucket_name
+  fishtank_bucket_name = module.content.fishtank_bucket_name
 
   # DynamoDB table references
   watches_table_name            = module.content.watches_table_name

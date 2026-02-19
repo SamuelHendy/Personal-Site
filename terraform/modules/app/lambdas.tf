@@ -3,26 +3,11 @@
 # Actual code is deployed via deploy_backend.yml workflow.
 
 locals {
-  lambda_runtime = "python3.11"
-  lambda_timeout = 30
-  lambda_memory  = 256
-}
-
-# Placeholder zip for initial Lambda creation
-data "archive_file" "placeholder" {
-  type        = "zip"
-  output_path = "${path.module}/builds/placeholder.zip"
-
-  source {
-    content  = <<-EOF
-      def lambda_handler(event, context):
-          return {
-              'statusCode': 200,
-              'body': '{"message": "Placeholder - deploy backend to update"}'
-          }
-    EOF
-    filename = "handler.py"
-  }
+  lambda_runtime   = "python3.11"
+  lambda_timeout   = 30
+  lambda_memory    = 256
+  placeholder_zip  = "${path.module}/templates/lambda/placeholder.zip"
+  placeholder_hash = filebase64sha256("${path.module}/templates/lambda/placeholder.zip")
 }
 
 # Health check lambda
@@ -34,8 +19,8 @@ resource "aws_lambda_function" "health" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   lifecycle {
     ignore_changes = [filename, source_code_hash]
@@ -51,8 +36,8 @@ resource "aws_lambda_function" "albums" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -74,8 +59,8 @@ resource "aws_lambda_function" "album_detail" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -97,8 +82,8 @@ resource "aws_lambda_function" "recently_updated" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -120,8 +105,8 @@ resource "aws_lambda_function" "watches" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -144,8 +129,8 @@ resource "aws_lambda_function" "watch_detail" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -168,8 +153,8 @@ resource "aws_lambda_function" "fishtank_residents" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
@@ -192,8 +177,8 @@ resource "aws_lambda_function" "fishtank_timeline" {
   timeout       = local.lambda_timeout
   memory_size   = local.lambda_memory
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
 
   environment {
     variables = {
