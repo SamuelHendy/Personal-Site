@@ -3,23 +3,21 @@
 # Actual code is deployed via deploy_backend.yml workflow.
 
 locals {
-  lambda_runtime              = "python3.11"
-  lambda_timeout              = 30
-  lambda_memory               = 256
-  lambda_reserved_concurrency = 10 # Limit concurrent executions to prevent runaway costs
-  placeholder_zip             = "${path.module}/templates/lambda/placeholder.zip"
-  placeholder_hash            = filebase64sha256("${path.module}/templates/lambda/placeholder.zip")
+  lambda_runtime   = "python3.11"
+  lambda_timeout   = 30
+  lambda_memory    = 256
+  placeholder_zip  = "${path.module}/templates/lambda/placeholder.zip"
+  placeholder_hash = filebase64sha256("${path.module}/templates/lambda/placeholder.zip")
 }
 
 # Health check lambda
 resource "aws_lambda_function" "health" {
-  function_name                  = "personal-api-health"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-health"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -33,13 +31,12 @@ resource "aws_lambda_function" "health" {
 
 # Albums lambda
 resource "aws_lambda_function" "albums" {
-  function_name                  = "personal-api-albums"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-albums"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -59,13 +56,12 @@ resource "aws_lambda_function" "albums" {
 
 # Album detail lambda
 resource "aws_lambda_function" "album_detail" {
-  function_name                  = "personal-api-album-detail"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-album-detail"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -85,13 +81,12 @@ resource "aws_lambda_function" "album_detail" {
 
 # Recently updated lambda
 resource "aws_lambda_function" "recently_updated" {
-  function_name                  = "personal-api-recently-updated"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-recently-updated"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -111,13 +106,12 @@ resource "aws_lambda_function" "recently_updated" {
 
 # Watches lambda
 resource "aws_lambda_function" "watches" {
-  function_name                  = "personal-api-watches"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-watches"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -138,13 +132,12 @@ resource "aws_lambda_function" "watches" {
 
 # Watch detail lambda
 resource "aws_lambda_function" "watch_detail" {
-  function_name                  = "personal-api-watch-detail"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-watch-detail"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -165,13 +158,12 @@ resource "aws_lambda_function" "watch_detail" {
 
 # Fishtank residents lambda
 resource "aws_lambda_function" "fishtank_residents" {
-  function_name                  = "personal-api-fishtank-residents"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-fishtank-residents"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
@@ -192,13 +184,12 @@ resource "aws_lambda_function" "fishtank_residents" {
 
 # Fishtank timeline lambda
 resource "aws_lambda_function" "fishtank_timeline" {
-  function_name                  = "personal-api-fishtank-timeline"
-  role                           = aws_iam_role.lambda.arn
-  handler                        = "handler.lambda_handler"
-  runtime                        = local.lambda_runtime
-  timeout                        = local.lambda_timeout
-  memory_size                    = local.lambda_memory
-  reserved_concurrent_executions = local.lambda_reserved_concurrency
+  function_name = "personal-api-fishtank-timeline"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
 
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
