@@ -142,48 +142,48 @@ resource "aws_apigatewayv2_integration" "fishtank_timeline" {
 # API Gateway routes
 resource "aws_apigatewayv2_route" "health" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /health"
+  route_key = "GET /api/health"
   target    = "integrations/${aws_apigatewayv2_integration.health.id}"
 }
 
 resource "aws_apigatewayv2_route" "albums" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /albums"
+  route_key = "GET /api/albums"
   target    = "integrations/${aws_apigatewayv2_integration.albums.id}"
 }
 
 resource "aws_apigatewayv2_route" "album_detail" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /albums/{album_name}"
+  route_key = "GET /api/albums/{album_name}"
   target    = "integrations/${aws_apigatewayv2_integration.album_detail.id}"
 }
 
 resource "aws_apigatewayv2_route" "recently_updated" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /recently-updated"
+  route_key = "GET /api/recently-updated"
   target    = "integrations/${aws_apigatewayv2_integration.recently_updated.id}"
 }
 
 resource "aws_apigatewayv2_route" "watches" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /watches"
+  route_key = "GET /api/watches"
   target    = "integrations/${aws_apigatewayv2_integration.watches.id}"
 }
 
 resource "aws_apigatewayv2_route" "watch_detail" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /watches/{brand}/{model}"
+  route_key = "GET /api/watches/{brand}/{model}"
   target    = "integrations/${aws_apigatewayv2_integration.watch_detail.id}"
 }
 
 resource "aws_apigatewayv2_route" "fishtank_residents" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /fishtank/residents"
+  route_key = "GET /api/fishtank/residents"
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_residents.id}"
 }
 
 resource "aws_apigatewayv2_route" "fishtank_timeline" {
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /fishtank/timeline"
+  route_key = "GET /api/fishtank/timeline"
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_timeline.id}"
 }
