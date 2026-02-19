@@ -1,4 +1,11 @@
 const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const CDN_URL = import.meta.env.VITE_CDN_URL || '/cdn'
+
+export const cdn = {
+  albums: (path: string) => `${CDN_URL}/albums/${path}`,
+  watches: (path: string) => `${CDN_URL}/watches/${path}`,
+  fishtank: (path: string) => `${CDN_URL}/fishtank/${path}`,
+}
 
 export const api = {
   health: `${BASE_URL}/health`,

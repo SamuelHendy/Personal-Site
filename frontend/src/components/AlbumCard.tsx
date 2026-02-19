@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
+import { cdn } from '../config/api'
 
 interface AlbumCardProps {
   name: string
@@ -10,7 +11,7 @@ interface AlbumCardProps {
 }
 
 export default function AlbumCard({ name, thumbnail, img_count, last_updated }: AlbumCardProps) {
-  const imageUrl = `https://shendy-albums.s3.eu-west-2.amazonaws.com/${thumbnail}`
+  const imageUrl = cdn.albums(thumbnail)
   
   return (
     <Link to={`/albums/${name}`} className="block">
