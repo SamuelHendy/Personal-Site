@@ -1,73 +1,112 @@
-# React + TypeScript + Vite
+# Personal Site
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Personal portfolio and hobby showcase site built with React, Python Lambda functions, and AWS infrastructure managed by Terraform.
 
-Currently, two official plugins are available:
+**Live at: [samhendy.com](https://samhendy.com)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Architecture
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Cloudflare │────▶│  CloudFront │────▶│   S3 (UI)   │
+│   (Proxy)   │     │             │     └─────────────┘
+└─────────────┘     │             │     ┌─────────────┐
+                    │  /api/*     │────▶│ API Gateway │──▶ Lambda
+                    │             │     └─────────────┘
+                    │  /cdn/*     │────▶┌─────────────┐
+                    │             │     │ S3 (Content)│
+                    └─────────────┘     └─────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- **Frontend**: React + TypeScript + Vite + TailwindCSS
+- **Backend**: Python Lambda functions behind API Gateway
+- **Infrastructure**: Terraform (S3, DynamoDB, Lambda, CloudFront, ACM)
+- **CI/CD**: GitHub Actions with label-based deployment triggers
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Project Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+├── frontend/          # React frontend application
+├── backend/           # Python Lambda function handlers
+├── terraform/         # Infrastructure as Code
+│   ├── modules/
+│   │   ├── app/       # Lambdas, API Gateway, CloudFront, UI bucket
+│   │   └── content/   # DynamoDB tables, content S3 buckets
+│   └── main.tf
+└── .github/workflows/ # CI/CD pipelines
+```
+
+## Local Development
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Runs at `http://localhost:5173`. API requests proxy to `http://localhost:5000`.
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+python dev_server.py --profile personal
+```
+
+Runs at `http://localhost:5000`. Requires AWS credentials with access to DynamoDB/S3.
+
+## Deployment
+
+Deployments are triggered via **PR labels**:
+
+| Label | Effect |
+|-------|--------|
+| `deploy-ui` | Build and deploy frontend to S3 |
+| `deploy-backend` | Package and deploy Lambda functions |
+| `deploy-terraform` | Run terraform plan (on PR) / apply (on merge) |
+
+### Manual Terraform
+
+Use the **Terraform Manual** workflow in GitHub Actions:
+1. Run with `action: plan` to create a plan
+2. Run with `action: apply` and the `run_id` from the plan step
+
+## GitHub Configuration
+
+### Repository Variables
+
+| Variable | Description |
+|----------|-------------|
+| `AWS_ROLE_ARN` | ARN of the GitHub Actions IAM role |
+
+### Cloudflare DNS
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| CNAME | `@` | `<cloudfront-dist>.cloudfront.net` | Proxied (orange) |
+| CNAME | `_acm-validation...` | `_xxx.acm-validations.aws.` | DNS only (grey) |
+
+## Content Buckets & CDN
+
+Content is served via CloudFront at `/cdn/*` paths, with CloudFront Functions stripping the prefix before forwarding to S3.
+
+| CDN Path | S3 Bucket | Purpose |
+|----------|-----------|---------|
+| `/cdn/albums/*` | `shendy-albums` | Photo albums |
+| `/cdn/watches/*` | `shendy-watches` | Watch collection images |
+| `/cdn/fishtank/*` | `shendy-fishtank` | Fishtank timeline/resident images |
+
+## DynamoDB Tables
+
+| Table | Purpose | Key |
+|-------|---------|-----|
+| `watch-collection` | Watch metadata (brand, model, specs) | `id` |
+| `fishtank-residents` | Fish/coral resident info | `id` |
+| `fishtank-timeline` | Fishtank event timeline | `id` |
+
+## License
+
+Private repository - all rights reserved.
