@@ -1,3 +1,45 @@
+# CloudFront Function to strip /cdn/albums/ prefix
+resource "aws_cloudfront_function" "strip_cdn_albums" {
+  name    = "strip-cdn-albums-prefix"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/cdn\/albums/, '');
+      return request;
+    }
+  EOF
+}
+
+# CloudFront Function to strip /cdn/watches/ prefix
+resource "aws_cloudfront_function" "strip_cdn_watches" {
+  name    = "strip-cdn-watches-prefix"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/cdn\/watches/, '');
+      return request;
+    }
+  EOF
+}
+
+# CloudFront Function to strip /cdn/fishtank/ prefix
+resource "aws_cloudfront_function" "strip_cdn_fishtank" {
+  name    = "strip-cdn-fishtank-prefix"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/cdn\/fishtank/, '');
+      return request;
+    }
+  EOF
+}
+
 # CloudFront Origin Access Control for S3 (UI bucket)
 resource "aws_cloudfront_origin_access_control" "ui" {
   name                              = "personal-site-ui-oac"
@@ -18,6 +60,7 @@ resource "aws_cloudfront_origin_access_control" "content" {
 
 # CloudFront distribution
 resource "aws_cloudfront_distribution" "main" {
+  comment             = "Personal Site - UI, API, and CDN"
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
@@ -121,6 +164,11 @@ resource "aws_cloudfront_distribution" "main" {
       }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.strip_cdn_albums.arn
+    }
+
     min_ttl     = 0
     default_ttl = 86400   # 1 day
     max_ttl     = 2592000 # 30 days
@@ -142,6 +190,11 @@ resource "aws_cloudfront_distribution" "main" {
       }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.strip_cdn_watches.arn
+    }
+
     min_ttl     = 0
     default_ttl = 86400   # 1 day
     max_ttl     = 2592000 # 30 days
@@ -161,6 +214,11 @@ resource "aws_cloudfront_distribution" "main" {
       cookies {
         forward = "none"
       }
+    }
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.strip_cdn_fishtank.arn
     }
 
     min_ttl     = 0
