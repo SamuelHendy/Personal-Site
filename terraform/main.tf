@@ -9,10 +9,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "shendy-terraform-state"
-    key            = "personal-site/terraform.tfstate"
-    region         = "eu-west-2"
-    dynamodb_table = "personal-aws-terraform-lock"
+    bucket       = "shendy-terraform-state"
+    key          = "personal-site/terraform.tfstate"
+    region       = "eu-west-2"
+    use_lockfile = true
   }
 }
 
