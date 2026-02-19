@@ -11,6 +11,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/cdn': {
+        target: 'https://samhendy.com',
+        changeOrigin: true,
+      },
     },
   },
 })

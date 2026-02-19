@@ -23,6 +23,7 @@ interface ImageModalProps {
 export default function ImageModal({ imageUrl, onClose, thumbnailRect }: ImageModalProps) {
   const [exifData, setExifData] = useState<ExifData | null>(null)
   const [exifError, setExifError] = useState<boolean>(false)
+  const [exifDismissed, setExifDismissed] = useState<boolean>(false)
 
   useEffect(() => {
     // Prevent scrolling when modal is open
@@ -125,23 +126,39 @@ export default function ImageModal({ imageUrl, onClose, thumbnailRect }: ImageMo
       </motion.div>
 
       {/* EXIF Data Display */}
-      {exifError && (
+      {exifError && !exifDismissed && (
         <motion.div
           className="absolute bottom-8 right-8 text-white text-sm space-y-1 text-left bg-black/60 backdrop-blur-sm px-4 py-3 rounded"
+          onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="text-gray-300 italic">Unable to load EXIF data (CORS error)</div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setExifDismissed(true); }}
+            className="absolute top-1 right-1 text-white/60 hover:text-white transition-colors"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
+          <div className="text-gray-300 italic">Unable to load image details</div>
         </motion.div>
       )}
-      {exifData && !exifError && (
+      {exifData && !exifError && !exifDismissed && (
         <motion.div
           className="absolute bottom-8 right-8 text-white text-sm space-y-1 text-left bg-black/60 backdrop-blur-sm px-4 py-3 rounded"
+          onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
+          <button
+            onClick={(e) => { e.stopPropagation(); setExifDismissed(true); }}
+            className="absolute top-1 right-1 text-white/60 hover:text-white transition-colors"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
           {exifData.DateTimeOriginal && (
             <div className="font-semibold mb-2">
               {new Date(exifData.DateTimeOriginal).toLocaleDateString('en-US', { 
