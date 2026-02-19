@@ -28,6 +28,20 @@ provider "aws" {
   }
 }
 
+# Provider for us-east-1 (required for ACM certificates used by CloudFront)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = "personal-site"
+      ManagedBy   = "terraform"
+      Environment = var.environment
+    }
+  }
+}
+
 # Content module - DynamoDB tables and S3 buckets for images/data
 module "content" {
   source = "./modules/content"
@@ -40,8 +54,14 @@ module "content" {
 module "app" {
   source = "./modules/app"
 
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
   environment = var.environment
   aws_region  = var.aws_region
+  domain_name = var.domain_name
 
   # Content bucket references
   albums_bucket_name   = module.content.albums_bucket_name

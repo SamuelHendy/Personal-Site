@@ -9,3 +9,9 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
+
+variable "domain_name" {
+  description = "Custom domain name for CloudFront (e.g., samhendy.com)"
+  type        = string
+  default     = null
+}
