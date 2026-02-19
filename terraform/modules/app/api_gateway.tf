@@ -17,6 +17,14 @@ resource "aws_apigatewayv2_stage" "main" {
   api_id      = aws_apigatewayv2_api.main.id
   name        = "$default"
   auto_deploy = true
+
+  # Rate limiting to prevent abuse
+  default_route_settings {
+    throttling_burst_limit = 50 # Max concurrent requests
+    throttling_rate_limit  = 20 # Requests per second
+  }
+
+  tags = local.api_gateway_tags
 }
 
 # Lambda permissions for API Gateway
