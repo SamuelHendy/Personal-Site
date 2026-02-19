@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
+import { api } from '../config/api'
 
 interface Album {
   name: string
@@ -22,7 +23,10 @@ export default function Feature() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('https://3y8jxev5y3.execute-api.eu-west-2.amazonaws.com/api/recently_updated')
+    // Determine limit based on screen width (5 for 2k+, 4 for smaller)
+    const limit = window.innerWidth >= 2000 ? 5 : 4
+    
+    fetch(api.recentlyUpdated(limit))
       .then(response => response.json())
       .then(data => {
         setAlbums(data)
@@ -57,7 +61,7 @@ export default function Feature() {
         {/* Top - Album Icons */}
         <div className="flex-none grid grid-cols-2 md:flex md:items-end md:justify-start gap-[var(--spacing-md)] md:gap-[var(--spacing-2xl)] relative z-10">
           {loading ? (
-            // Loading placeholders
+            // Loading placeholders (4 for most screens, CSS hides 5th on smaller)
             [1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -83,7 +87,7 @@ export default function Feature() {
                     imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/${album.thumbnail}`}
                     overlayImageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/${album.thumbnail}`}
                     className="aspect-square"
-                    enableSepia={true}
+                    enableGrayscale={true}
                   >
                     <p className="text-sm font-bold text-rough">{album.name.replace(/_/g, ' ')}</p>
                     <p className="text-xs opacity-80 text-rough">{album.img_count} photos</p>

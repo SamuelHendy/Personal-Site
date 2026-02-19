@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ImageModal from '../components/ImageModal'
+import { api } from '../config/api'
 
 export default function AlbumDetail() {
   const { albumName } = useParams<{ albumName: string }>()
@@ -16,7 +17,7 @@ export default function AlbumDetail() {
   useEffect(() => {
     if (!albumName) return
 
-    const apiUrl = `https://3y8jxev5y3.execute-api.eu-west-2.amazonaws.com/api/album/${albumName}`
+    const apiUrl = api.album(albumName)
     console.log('Fetching album:', albumName)
     console.log('API URL:', apiUrl)
 

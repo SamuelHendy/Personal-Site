@@ -3,7 +3,6 @@ import { X, Star, GripHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface Watch {
-  Model_Id: string
   Brand: string
   Model: string
   Dial_Colour: string
@@ -32,7 +31,8 @@ interface MobileWatchModalProps {
 export default function MobileWatchModal({ watch, onClose }: MobileWatchModalProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
-  const [imageSrc, setImageSrc] = useState(imageUrl)
+  const placeholderUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(watch.Brand)}`
+  const [imageSrc, setImageSrc] = useState(placeholderUrl)
   
   // Calculate image height based on 3:4 aspect ratio
   const imageHeight = (window.innerWidth * 4) / 3
