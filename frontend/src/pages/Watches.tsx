@@ -178,7 +178,10 @@ export default function Watches() {
       return
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    setScrollPosition(0)
+    // Use requestAnimationFrame to defer setState outside the effect's synchronous execution
+    requestAnimationFrame(() => {
+      setScrollPosition(0)
+    })
   }, [searchQuery, selectedFilter])
 
   // Track scroll position and handle immediate snapping (scroll hijacking)
