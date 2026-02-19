@@ -20,29 +20,30 @@ resource "aws_s3_bucket" "fishtank" {
 }
 
 # Block public access for all content buckets
+# Note: block_public_policy and restrict_public_buckets are false to allow CloudFront OAC policy
 resource "aws_s3_bucket_public_access_block" "albums" {
   bucket = aws_s3_bucket.albums.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false
 }
 
 resource "aws_s3_bucket_public_access_block" "watches" {
   bucket = aws_s3_bucket.watches.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false
 }
 
 resource "aws_s3_bucket_public_access_block" "fishtank" {
   bucket = aws_s3_bucket.fishtank.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false
 }

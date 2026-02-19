@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
-import { api } from '../config/api'
+import { api, cdn } from '../config/api'
 
 interface Album {
   name: string
@@ -84,8 +84,8 @@ export default function Feature() {
                 {/* Image content div overlaid on top with negative margin */}
                 <div className="-mt-[100%] p-2">
                   <DirectionAwareHover
-                    imageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/${album.thumbnail}`}
-                    overlayImageUrl={`https://shendy-albums.s3.eu-west-2.amazonaws.com/${album.thumbnail}`}
+                    imageUrl={cdn.albums(album.thumbnail)}
+                    overlayImageUrl={cdn.albums(album.thumbnail)}
                     className="aspect-square"
                     enableGrayscale={true}
                   >

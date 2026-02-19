@@ -24,6 +24,37 @@ variable "fishtank_bucket_name" {
   type        = string
 }
 
+# Content bucket ARNs (for CloudFront policies)
+variable "albums_bucket_arn" {
+  description = "Albums S3 bucket ARN"
+  type        = string
+}
+
+variable "albums_bucket_domain" {
+  description = "Albums S3 bucket regional domain name"
+  type        = string
+}
+
+variable "watches_bucket_arn" {
+  description = "Watches S3 bucket ARN"
+  type        = string
+}
+
+variable "watches_bucket_domain" {
+  description = "Watches S3 bucket regional domain name"
+  type        = string
+}
+
+variable "fishtank_bucket_arn" {
+  description = "Fishtank S3 bucket ARN"
+  type        = string
+}
+
+variable "fishtank_bucket_domain" {
+  description = "Fishtank S3 bucket regional domain name"
+  type        = string
+}
+
 # DynamoDB table names
 variable "watches_table_name" {
   description = "Watches DynamoDB table name"

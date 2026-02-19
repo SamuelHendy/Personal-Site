@@ -28,6 +28,22 @@ output "fishtank_bucket_arn" {
   value       = aws_s3_bucket.fishtank.arn
 }
 
+# Bucket domain names for CloudFront
+output "albums_bucket_domain" {
+  description = "Albums S3 bucket regional domain name"
+  value       = aws_s3_bucket.albums.bucket_regional_domain_name
+}
+
+output "watches_bucket_domain" {
+  description = "Watches S3 bucket regional domain name"
+  value       = aws_s3_bucket.watches.bucket_regional_domain_name
+}
+
+output "fishtank_bucket_domain" {
+  description = "Fishtank S3 bucket regional domain name"
+  value       = aws_s3_bucket.fishtank.bucket_regional_domain_name
+}
+
 output "watches_table_name" {
   description = "Watches DynamoDB table name"
   value       = aws_dynamodb_table.watches.name
@@ -58,18 +74,3 @@ output "fishtank_timeline_table_arn" {
   value       = aws_dynamodb_table.fishtank_timeline.arn
 }
 
-# CloudFront URLs for content
-output "albums_cdn_url" {
-  description = "CloudFront URL for albums content"
-  value       = "https://${aws_cloudfront_distribution.albums.domain_name}"
-}
-
-output "watches_cdn_url" {
-  description = "CloudFront URL for watches content"
-  value       = "https://${aws_cloudfront_distribution.watches.domain_name}"
-}
-
-output "fishtank_cdn_url" {
-  description = "CloudFront URL for fishtank content"
-  value       = "https://${aws_cloudfront_distribution.fishtank.domain_name}"
-}

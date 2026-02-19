@@ -48,19 +48,16 @@ module "app" {
   watches_bucket_name  = module.content.watches_bucket_name
   fishtank_bucket_name = module.content.fishtank_bucket_name
 
+  # Content bucket ARNs and domains (for CloudFront CDN)
+  albums_bucket_arn      = module.content.albums_bucket_arn
+  albums_bucket_domain   = module.content.albums_bucket_domain
+  watches_bucket_arn     = module.content.watches_bucket_arn
+  watches_bucket_domain  = module.content.watches_bucket_domain
+  fishtank_bucket_arn    = module.content.fishtank_bucket_arn
+  fishtank_bucket_domain = module.content.fishtank_bucket_domain
+
   # DynamoDB table references
   watches_table_name            = module.content.watches_table_name
   fishtank_residents_table_name = module.content.fishtank_residents_table_name
   fishtank_timeline_table_name  = module.content.fishtank_timeline_table_name
-}
-
-# Import blocks for existing resources (must be in root module)
-import {
-  to = module.content.aws_s3_bucket.albums
-  id = "shendy-albums"
-}
-
-import {
-  to = module.content.aws_dynamodb_table.watches
-  id = "watch-collection"
 }

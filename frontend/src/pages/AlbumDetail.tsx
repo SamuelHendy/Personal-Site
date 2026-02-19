@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ImageModal from '../components/ImageModal'
-import { api } from '../config/api'
+import { api, cdn } from '../config/api'
 
 export default function AlbumDetail() {
   const { albumName } = useParams<{ albumName: string }>()
@@ -87,7 +87,7 @@ export default function AlbumDetail() {
       <div className="max-w-[2000px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {imagePaths.map((imagePath: string, index: number) => {
-          const imageUrl = `https://shendy-albums.s3.eu-west-2.amazonaws.com/${imagePath}`
+          const imageUrl = cdn.albums(imagePath)
           return (
             <div
               key={index}
