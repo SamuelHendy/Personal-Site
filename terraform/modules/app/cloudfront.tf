@@ -97,4 +97,6 @@ resource "aws_cloudfront_distribution" "main" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+
+  tags = local.cloudfront_tags
 }

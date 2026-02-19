@@ -1,6 +1,8 @@
 # UI bucket for frontend static files
 resource "aws_s3_bucket" "ui" {
   bucket = "shendy-personal-site-ui"
+
+  tags = local.ui_tags
 }
 
 resource "aws_s3_bucket_public_access_block" "ui" {
