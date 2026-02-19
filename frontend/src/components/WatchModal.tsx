@@ -5,14 +5,12 @@ import { X, Star } from 'lucide-react'
 interface Watch {
   Brand: string
   Model: string
-  Model_Id: string
   Dial_Colour: string
   Case_Width: number
   Movement_Type: string
   Movement_Name?: string
   Manufactured_Year: string
   Obtained_Date: string
-  Dark_Name: boolean
   Description?: string
   Purchase_Price?: string | number
   Acquired_From?: string
@@ -32,19 +30,17 @@ interface WatchModalProps {
 }
 
 export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModalProps) {
+  // Lock scrolling when modal is open (block wheel events)
   useEffect(() => {
-    // Prevent scrolling when modal is open
-    const scrollY = window.scrollY
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.width = '100%'
+    const blockWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     
-    // Re-enable scrolling when modal closes
+    // Use capture phase and non-passive to block before it reaches the page
+    window.addEventListener('wheel', blockWheel, { capture: true, passive: false })
     return () => {
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      window.scrollTo(0, scrollY)
+      window.removeEventListener('wheel', blockWheel, { capture: true })
     }
   }, [])
 
@@ -64,8 +60,6 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
     <motion.div 
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
-      onWheel={(e) => e.preventDefault()}
-      onTouchMove={(e) => e.preventDefault()}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

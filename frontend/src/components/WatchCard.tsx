@@ -6,7 +6,6 @@ interface WatchCardProps {
   movementType: string
   manufacturedYear: string
   obtainedDate: string
-  darkName: boolean
   pullPile?: {
     vertical: number
     tilt: number
@@ -29,7 +28,6 @@ export default function WatchCard({
   movementType,
   manufacturedYear,
   obtainedDate,
-  darkName,
   pullPile,
   placePile,
   debugPosition,
@@ -84,7 +82,7 @@ export default function WatchCard({
         {/* Info */}
         <div className="hidden md:flex flex-none flex-col p-4 space-y-2">
         <div>
-          <h3 className={`text-xl font-bold ${darkName ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)]'}`}>
+          <h3 className="text-xl font-bold text-[var(--color-text-primary)]">
             {brand}
           </h3>
           <p className="text-sm text-[var(--color-text-secondary)]">{model}</p>

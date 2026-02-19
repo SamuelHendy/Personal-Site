@@ -6,18 +6,17 @@ import WatchCard from '../components/WatchCard'
 import WatchModal from '../components/WatchModal'
 import MobileWatchCard from '../components/MobileWatchCard'
 import MobileWatchModal from '../components/MobileWatchModal'
+import { api } from '../config/api'
 
 interface Watch {
   Brand: string
   Model: string
-  Model_Id: string
   Dial_Colour: string
   Case_Width: number
   Movement_Type: string
   Movement_Name?: string
   Manufactured_Year: string
   Obtained_Date: string
-  Dark_Name: boolean
   Description?: string
   Purchase_Price?: string | number
   Acquired_From?: string
@@ -53,6 +52,9 @@ export default function Watches() {
   // Modal state
   const [selectedWatch, setSelectedWatch] = useState<Watch | null>(null)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | undefined>(undefined)
+  
+  // Cache for watch details (keyed by Model)
+  const [watchDetailsCache, setWatchDetailsCache] = useState<Record<string, Watch>>({})
 
   // Mobile carousel state
   const [mobileCardIndex, setMobileCardIndex] = useState(0)
@@ -86,7 +88,7 @@ export default function Watches() {
     
     const currentCard = Math.round(scrollPosition / 800)
     const nextScroll = (currentCard + 1) * 800
-    const maxScroll = (watches.length - 4) * 800
+    const maxScroll = (filteredWatches.length - 4) * 800
     if (nextScroll <= maxScroll) {
       isSnappingRef.current = true
       window.scrollTo({ top: nextScroll, behavior: 'smooth' })
@@ -114,6 +116,52 @@ export default function Watches() {
     }
   }
 
+  // Fetch watch details with caching
+  const fetchWatchDetails = async (watch: Watch): Promise<Watch> => {
+    const cacheKey = watch.Model
+    
+    // Return cached details if available
+    if (watchDetailsCache[cacheKey]) {
+      return watchDetailsCache[cacheKey]
+    }
+    
+    // Fetch details from API
+    try {
+      const response = await fetch(api.watchDetail(watch.Brand, watch.Model.replace(/ /g, '_')))
+      const details = await response.json()
+      const fullWatch = { ...watch, ...details }
+      
+      // Cache the details
+      setWatchDetailsCache(prev => ({ ...prev, [cacheKey]: fullWatch }))
+      
+      return fullWatch
+    } catch (error) {
+      console.error('Error fetching watch details:', error)
+      return watch
+    }
+  }
+
+  // Handle opening watch modal (desktop)
+  const handleOpenWatchModal = async (watch: Watch, cardElement: HTMLElement | null) => {
+    if (cardElement) {
+      setThumbnailRect(cardElement.getBoundingClientRect())
+    }
+    setSelectedWatch(watch)
+    
+    // Fetch details in background and update modal
+    const watchWithDetails = await fetchWatchDetails(watch)
+    setSelectedWatch(watchWithDetails)
+  }
+
+  // Handle opening mobile watch modal
+  const handleOpenMobileModal = async (watch: Watch) => {
+    setMobileModalWatch(watch)
+    
+    // Fetch details in background and update modal
+    const watchWithDetails = await fetchWatchDetails(watch)
+    setMobileModalWatch(watchWithDetails)
+  }
+
   // Hide scrollbar on body element
   useEffect(() => {
     document.body.classList.add('hide-scrollbar')
@@ -122,9 +170,15 @@ export default function Watches() {
     }
   }, [])
 
-  // Reset scroll position when search or filter changes
+  // Reset scroll position when search or filter changes (but not on initial mount)
+  const isInitialMount = useRef(true)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setScrollPosition(0)
   }, [searchQuery, selectedFilter])
 
   // Track scroll position and handle immediate snapping (scroll hijacking)
@@ -132,6 +186,15 @@ export default function Watches() {
     const scrollPerCard = 800
     const scrollAccumulator = { value: 0 }
     const SCROLL_THRESHOLD = 50
+    
+    // Calculate filtered count inside useEffect
+    const filteredCount = watches.filter(watch => {
+      let matchesFilter = selectedFilter === 'All' || 
+        (selectedFilter === 'Favourites' ? watch.Is_Favourite === true : watch.Movement_Type === selectedFilter)
+      const matchesSearch = searchQuery === '' || 
+        Object.values(watch).some(value => value?.toString().toLowerCase().includes(searchQuery.toLowerCase()))
+      return matchesFilter && matchesSearch
+    }).length
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -145,7 +208,8 @@ export default function Watches() {
       
       if (Math.abs(scrollAccumulator.value) >= SCROLL_THRESHOLD) {
         const currentCard = Math.round(scrollPosition / scrollPerCard)
-        const maxCards = Math.max(0, watches.length - 4)
+        // Stop when last card reaches pos 3 (right pile visible)
+        const maxCards = Math.max(0, filteredCount - 4)
         
         if (scrollAccumulator.value > 0 && currentCard < maxCards) {
           // Scroll down/right - next card
@@ -187,10 +251,10 @@ export default function Watches() {
       window.removeEventListener('wheel', handleWheel)
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [scrollPosition, watches.length])
+  }, [scrollPosition, watches.length, selectedFilter, searchQuery])
 
   useEffect(() => {
-    fetch('https://3y8jxev5y3.execute-api.eu-west-2.amazonaws.com/api/watches')
+    fetch(api.watches)
       .then(response => response.json())
       .then(data => {
         // Parse dates and add random pile data to each watch
@@ -211,8 +275,7 @@ export default function Watches() {
             place_pile: {
               vertical: randomVertical(),
               tilt: randomTilt()
-            },
-            Is_Favourite: true // TESTING: Set all watches as favourites
+            }
           }
         })
         
@@ -259,10 +322,10 @@ export default function Watches() {
     const scrollPerCard = 800 // 800px of scroll per card transition (slower animations)
     
     // Each card starts moving when previous card completes its transition
-    // First 4 cards start at positions 0, 1, 2, 3 (offset by -3)
+    // At scroll 0: card 0 at position 0, card 1 at 1, card 2 at 2, card 3 at 3 (right pile)
+    // As we scroll, positions decrease (cards move left through the sequence)
     const scrollOffset = scrollPosition / scrollPerCard
-    const cardScrollTurn = cardIndex * 1.0 // Card N starts after previous card completes (no overlap)
-    const rawPosition = (scrollOffset - cardScrollTurn) - 3 // Offset by -3 so first card starts at position 0
+    const rawPosition = cardIndex - scrollOffset
     
     // Apply easing to create brief pauses at positions 1 and 2
     // This slows down the progression near these key positions
@@ -435,7 +498,7 @@ export default function Watches() {
               rotation = 0
               scale = 1
               opacity = 1
-              zIndex = 1000 + index
+              zIndex = 1000 + Math.round(position * 100) // Higher position = higher z-index
             } else if (position >= 1 && position < 2) {
               // Moving from 55% to -55%
               const progress = position - 1 // 0 to 1
@@ -444,7 +507,7 @@ export default function Watches() {
               rotation = 0
               scale = 1
               opacity = 1
-              zIndex = 1000 + index
+              zIndex = 1000 + Math.round(position * 100) // Higher position = higher z-index
             } else if (position >= 2 && position < 3) {
               // Moving from 165% to 55% (straightened)
               const progress = (position - 2) / 1.0 // 0 to 1
@@ -453,7 +516,7 @@ export default function Watches() {
               rotation = 0
               scale = 1
               opacity = 1
-              zIndex = 1000 + index
+              zIndex = 1000 + Math.round(position * 100) // Higher position = higher z-index
             } else if (position >= 3 && position < 3.2) {
               // Straightening at 165% - card loses twist as it approaches position 3
               // At position 3.2: full twist, At position 3: no twist
@@ -477,8 +540,8 @@ export default function Watches() {
             
             return (
               <motion.div
-                key={`${watch.Model_Id}-${index}`}
-                data-watch-id={watch.Model_Id}
+                key={`${watch.Model}-${index}`}
+                data-watch-id={watch.Model}
                 className="absolute"
                 animate={{
                   x: xOffset,
@@ -502,7 +565,6 @@ export default function Watches() {
                   movementType={watch.Movement_Type}
                   manufacturedYear={watch.Manufactured_Year}
                   obtainedDate={watch.Obtained_Date}
-                  darkName={watch.Dark_Name}
                   pullPile={watch.pull_pile}
                   placePile={watch.place_pile}
                   debugPosition={DEBUG_MODE ? position : undefined}
@@ -510,11 +572,8 @@ export default function Watches() {
                   isClickable={position >= 0 && position <= 3}
                   onClick={() => {
                     if (position >= 0 && position <= 3) {
-                      const cardElement = document.querySelector(`[data-watch-id="${watch.Model_Id}"]`)
-                      if (cardElement) {
-                        setThumbnailRect(cardElement.getBoundingClientRect())
-                      }
-                      setSelectedWatch(watch)
+                      const cardElement = document.querySelector(`[data-watch-id="${watch.Model}"]`)
+                      handleOpenWatchModal(watch, cardElement as HTMLElement | null)
                     }
                   }}
                 />
@@ -597,7 +656,7 @@ export default function Watches() {
               
               return (
                 <motion.div
-                  key={watch.Model_Id}
+                  key={watch.Model}
                   className="absolute w-[70%] h-full flex items-center justify-center"
                   animate={{
                     x,
@@ -610,8 +669,8 @@ export default function Watches() {
                   style={{ pointerEvents: index === mobileCardIndex ? 'auto' : 'none' }}
                 >
                   <MobileWatchCard
-                    modelId={watch.Model_Id}
-                    onClick={index === mobileCardIndex ? () => setMobileModalWatch(watch) : undefined}
+                    modelId={watch.Model}
+                    onClick={index === mobileCardIndex ? () => handleOpenMobileModal(watch) : undefined}
                   />
                 </motion.div>
               )

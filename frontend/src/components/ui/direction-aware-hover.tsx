@@ -6,7 +6,7 @@ interface DirectionAwareHoverProps {
   overlayImageUrl?: string;
   children: React.ReactNode;
   className?: string;
-  enableSepia?: boolean;
+  enableGrayscale?: boolean;
   showGradient?: boolean;
   showLastUpdated?: boolean;
   lastUpdated?: string;
@@ -18,7 +18,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
   overlayImageUrl,
   children,
   className = "",
-  enableSepia = false,
+  enableGrayscale = false,
   showGradient = false,
   showLastUpdated = false,
   lastUpdated,
@@ -68,7 +68,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
             alt=""
             className="album-cover absolute inset-0 w-full h-full object-cover z-10"
             style={{
-              filter: enableSepia ? 'sepia(100%) saturate(70%) brightness(0.9) hue-rotate(-15deg)' : 'none',
+              filter: enableGrayscale ? 'grayscale(100%)' : 'none',
             }}
             initial={{ opacity: 0 }}
             animate={

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import AlbumCard from '../components/AlbumCard'
+import { api } from '../config/api'
 
 interface Album {
   name: string
@@ -15,7 +16,7 @@ export default function Albums() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('https://3y8jxev5y3.execute-api.eu-west-2.amazonaws.com/api/albums')
+    fetch(api.albums)
       .then(response => response.json())
       .then(data => {
         setAlbums(data)
