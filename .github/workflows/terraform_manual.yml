@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   plan:
-    if: inputs.action == 'plan'
+    if: ${{ inputs.action == 'plan' }}
     runs-on: ubuntu-latest
     
     steps:
@@ -67,7 +67,7 @@ jobs:
           retention-days: 7
 
   apply:
-    if: inputs.action == 'apply'
+    if: ${{ inputs.action == 'apply' }}
     runs-on: ubuntu-latest
     
     steps:
