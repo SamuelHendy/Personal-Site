@@ -1,6 +1,7 @@
 {
-  "name": "SamHendy",
+  "name": "Samuel Hendy",
   "short_name": "SHendy",
+  "start_url": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
