@@ -65,6 +65,14 @@ resource "aws_cloudfront_distribution" "main" {
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
+  aliases             = var.domain_name != null ? [var.domain_name] : []
+
+  viewer_certificate {
+    acm_certificate_arn            = var.domain_name != null ? aws_acm_certificate.cloudfront[0].arn : null
+    ssl_support_method             = var.domain_name != null ? "sni-only" : null
+    minimum_protocol_version       = var.domain_name != null ? "TLSv1.2_2021" : null
+    cloudfront_default_certificate = var.domain_name == null
+  }
 
   # S3 origin for static UI files
   origin {
@@ -243,10 +251,6 @@ resource "aws_cloudfront_distribution" "main" {
     geo_restriction {
       restriction_type = "none"
     }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
   }
 
   tags = local.cloudfront_tags
