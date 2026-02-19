@@ -178,7 +178,10 @@ export default function Watches() {
       return
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    setScrollPosition(0)
+    // Use requestAnimationFrame to defer setState outside the effect's synchronous execution
+    requestAnimationFrame(() => {
+      setScrollPosition(0)
+    })
   }, [searchQuery, selectedFilter])
 
   // Track scroll position and handle immediate snapping (scroll hijacking)
@@ -189,7 +192,7 @@ export default function Watches() {
     
     // Calculate filtered count inside useEffect
     const filteredCount = watches.filter(watch => {
-      let matchesFilter = selectedFilter === 'All' || 
+      const matchesFilter = selectedFilter === 'All' || 
         (selectedFilter === 'Favourites' ? watch.Is_Favourite === true : watch.Movement_Type === selectedFilter)
       const matchesSearch = searchQuery === '' || 
         Object.values(watch).some(value => value?.toString().toLowerCase().includes(searchQuery.toLowerCase()))
@@ -251,7 +254,7 @@ export default function Watches() {
       window.removeEventListener('wheel', handleWheel)
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [scrollPosition, watches.length, selectedFilter, searchQuery])
+  }, [scrollPosition, watches, selectedFilter, searchQuery])
 
   useEffect(() => {
     fetch(api.watches)
