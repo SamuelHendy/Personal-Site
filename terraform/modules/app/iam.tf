@@ -14,6 +14,8 @@ resource "aws_iam_role" "lambda" {
       }
     ]
   })
+
+  tags = local.iam_tags
 }
 
 # CloudWatch Logs policy

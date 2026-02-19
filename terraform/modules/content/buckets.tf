@@ -1,16 +1,22 @@
 # Albums bucket - IMPORT EXISTING (import block in root main.tf)
 resource "aws_s3_bucket" "albums" {
   bucket = "shendy-albums"
+
+  tags = local.albums_bucket_tags
 }
 
 # Watches bucket - NEW
 resource "aws_s3_bucket" "watches" {
   bucket = "shendy-watches"
+
+  tags = local.watches_bucket_tags
 }
 
 # Fishtank bucket - NEW
 resource "aws_s3_bucket" "fishtank" {
   bucket = "shendy-fishtank"
+
+  tags = local.fishtank_bucket_tags
 }
 
 # Block public access for all content buckets

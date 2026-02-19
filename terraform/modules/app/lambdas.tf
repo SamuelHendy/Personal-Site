@@ -22,6 +22,8 @@ resource "aws_lambda_function" "health" {
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
 
+  tags = local.lambda_health_tags
+
   lifecycle {
     ignore_changes = [filename, source_code_hash]
   }
@@ -44,6 +46,8 @@ resource "aws_lambda_function" "albums" {
       BUCKET_NAME = var.albums_bucket_name
     }
   }
+
+  tags = local.lambda_albums_tags
 
   lifecycle {
     ignore_changes = [filename, source_code_hash]
@@ -68,6 +72,8 @@ resource "aws_lambda_function" "album_detail" {
     }
   }
 
+  tags = local.lambda_album_detail_tags
+
   lifecycle {
     ignore_changes = [filename, source_code_hash]
   }
@@ -90,6 +96,8 @@ resource "aws_lambda_function" "recently_updated" {
       BUCKET_NAME = var.albums_bucket_name
     }
   }
+
+  tags = local.lambda_recently_updated_tags
 
   lifecycle {
     ignore_changes = [filename, source_code_hash]
@@ -115,6 +123,8 @@ resource "aws_lambda_function" "watches" {
     }
   }
 
+  tags = local.lambda_watches_tags
+
   lifecycle {
     ignore_changes = [filename, source_code_hash]
   }
@@ -138,6 +148,8 @@ resource "aws_lambda_function" "watch_detail" {
       BUCKET_NAME = var.watches_bucket_name
     }
   }
+
+  tags = local.lambda_watch_detail_tags
 
   lifecycle {
     ignore_changes = [filename, source_code_hash]
@@ -163,6 +175,8 @@ resource "aws_lambda_function" "fishtank_residents" {
     }
   }
 
+  tags = local.lambda_fishtank_residents_tags
+
   lifecycle {
     ignore_changes = [filename, source_code_hash]
   }
@@ -186,6 +200,8 @@ resource "aws_lambda_function" "fishtank_timeline" {
       BUCKET_NAME = var.fishtank_bucket_name
     }
   }
+
+  tags = local.lambda_fishtank_timeline_tags
 
   lifecycle {
     ignore_changes = [filename, source_code_hash]

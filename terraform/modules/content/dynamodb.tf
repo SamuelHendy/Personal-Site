@@ -14,6 +14,8 @@ resource "aws_dynamodb_table" "watches" {
     name = "Model"
     type = "S"
   }
+
+  tags = local.watches_table_tags
 }
 
 # Fishtank residents table - NEW
@@ -32,6 +34,8 @@ resource "aws_dynamodb_table" "fishtank_residents" {
     name = "Id"
     type = "S"
   }
+
+  tags = local.fishtank_residents_table_tags
 }
 
 # Fishtank timeline table - NEW
@@ -44,4 +48,6 @@ resource "aws_dynamodb_table" "fishtank_timeline" {
     name = "Id"
     type = "S"
   }
+
+  tags = local.fishtank_timeline_table_tags
 }

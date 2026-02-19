@@ -9,6 +9,8 @@ resource "aws_apigatewayv2_api" "main" {
     allow_headers = ["Content-Type"]
     max_age       = 300
   }
+
+  tags = local.api_gateway_tags
 }
 
 resource "aws_apigatewayv2_stage" "main" {
