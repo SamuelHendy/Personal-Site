@@ -97,7 +97,20 @@ export default function Watches() {
       // Extract just the field booleans (exclude ConfigType and ConfigKey)
       delete data.ConfigType
       delete data.ConfigKey
-      setDisplayConfig(data)
+      
+      // If empty, create default record with all fields disabled
+      if (Object.keys(data).length === 0) {
+        const defaults: DisplayConfig = {}
+        DISPLAY_FIELDS.forEach(({ key }) => { defaults[key] = false })
+        await fetch(api.admin.config('display_config', 'watches'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(defaults),
+        })
+        setDisplayConfig(defaults)
+      } else {
+        setDisplayConfig(data)
+      }
     } catch (err) {
       console.error('Failed to load display config:', err)
       setDisplayConfig({})

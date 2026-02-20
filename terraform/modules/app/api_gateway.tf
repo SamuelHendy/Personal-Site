@@ -211,6 +211,28 @@ resource "aws_apigatewayv2_route" "fishtank_timeline" {
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_timeline.id}"
 }
 
+# Public Config Lambda (read-only)
+resource "aws_lambda_permission" "config" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.config.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "config" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.config.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "config" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/config/{config_type}/{config_key}"
+  target    = "integrations/${aws_apigatewayv2_integration.config.id}"
+}
+
 # ============================================
 # Admin API Routes (protected by Cognito JWT)
 # ============================================

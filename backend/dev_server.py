@@ -30,6 +30,7 @@ from personal_api_fishtank_residents.handler import lambda_handler as fishtank_r
 from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_timeline_handler
 from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
 from personal_api_admin_config.handler import lambda_handler as admin_config_handler
+from personal_api_config.handler import lambda_handler as config_handler
 
 app = Flask(__name__)
 CORS(app)
@@ -124,6 +125,11 @@ def admin_config(config_type, config_key):
     return invoke_lambda(admin_config_handler, path_params={'config_type': config_type, 'config_key': config_key}, body=body)
 
 
+@app.route('/config/<config_type>/<config_key>', methods=['GET'])
+def public_config(config_type, config_key):
+    return invoke_lambda(config_handler, path_params={'config_type': config_type, 'config_key': config_key})
+
+
 if __name__ == '__main__':
     if args.profile:
         print(f"Using AWS profile: {args.profile}")
@@ -147,5 +153,8 @@ if __name__ == '__main__':
     print("  DELETE /admin/watches/<brand>/<model> - Delete watch")
     print("  GET    /admin/config/<type>/<key>    - Get config")
     print("  PUT    /admin/config/<type>/<key>    - Update config")
+    print("")
+    print("Public Config:")
+    print("  GET    /config/<type>/<key>          - Get config (read-only)")
     print("")
     app.run(debug=True, host='0.0.0.0', port=5000)

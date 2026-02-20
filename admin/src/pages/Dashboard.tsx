@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, Fish, Image, TrendingUp, Users, Eye, AlertTriangle, Gauge, BarChart3, Check, X, Minus, Power } from 'lucide-react'
+import { api } from '../config/api'
 
 type ContentStatus = 'active' | 'partial' | 'empty' | 'disabled'
 
@@ -85,11 +87,64 @@ function ContentCard({ title, description, icon, iconBgClass, pageEnabled, statu
   )
 }
 
+interface PageEnabledConfig {
+  watches?: boolean
+  fishtank?: boolean
+  albums?: boolean
+}
+
 export default function Dashboard() {
-  // TODO: Replace with actual state from API
-  const handleToggle = (page: string) => {
-    console.log(`Toggle ${page}`)
-    // Will call API to toggle page status
+  const [watchCount, setWatchCount] = useState<number | null>(null)
+  const [pageEnabled, setPageEnabled] = useState<PageEnabledConfig>({})
+
+  useEffect(() => {
+    // Fetch watch count
+    fetch(api.admin.watches)
+      .then(res => res.json())
+      .then(data => setWatchCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => setWatchCount(0))
+
+    // Fetch page enabled config (auto-create if empty)
+    fetch(api.admin.config('page_enabled', 'root'))
+      .then(res => res.json())
+      .then(data => {
+        delete data.ConfigType
+        delete data.ConfigKey
+        // If empty, create default record with all pages disabled
+        if (Object.keys(data).length === 0) {
+          const defaults: PageEnabledConfig = { watches: false, fishtank: false, albums: false }
+          fetch(api.admin.config('page_enabled', 'root'), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(defaults),
+          })
+          setPageEnabled(defaults)
+        } else {
+          setPageEnabled(data)
+        }
+      })
+      .catch(() => setPageEnabled({}))
+  }, [])
+
+  const handleToggle = async (page: keyof PageEnabledConfig) => {
+    const currentValue = pageEnabled[page] ?? false
+    const newValue = !currentValue
+
+    // Optimistic update
+    setPageEnabled(prev => ({ ...prev, [page]: newValue }))
+
+    try {
+      const res = await fetch(api.admin.config('page_enabled', 'root'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...pageEnabled, [page]: newValue }),
+      })
+      if (!res.ok) throw new Error('Failed to update')
+    } catch {
+      // Revert on error
+      setPageEnabled(prev => ({ ...prev, [page]: currentValue }))
+      alert('Failed to update page status')
+    }
   }
 
   return (
@@ -207,9 +262,9 @@ export default function Dashboard() {
             description="Collection page"
             icon={<Clock className="w-5 h-5 text-primary" />}
             iconBgClass="bg-primary/10"
-            pageEnabled={true}
-            status="active"
-            itemCount={3}
+            pageEnabled={pageEnabled.watches ?? false}
+            status={pageEnabled.watches ? (watchCount ? 'active' : 'empty') : 'disabled'}
+            itemCount={watchCount ?? 0}
             itemLabel="watches"
             manageLink="/watches"
             btnClass="btn-primary"
@@ -222,8 +277,8 @@ export default function Dashboard() {
             description="Aquarium page"
             icon={<Fish className="w-5 h-5 text-secondary" />}
             iconBgClass="bg-secondary/10"
-            pageEnabled={true}
-            status="partial"
+            pageEnabled={pageEnabled.fishtank ?? false}
+            status={pageEnabled.fishtank ? 'partial' : 'disabled'}
             itemCount={4}
             itemLabel="residents"
             manageLink="/fishtank"
@@ -237,8 +292,8 @@ export default function Dashboard() {
             description="Photo gallery"
             icon={<Image className="w-5 h-5 text-accent" />}
             iconBgClass="bg-accent/10"
-            pageEnabled={false}
-            status="disabled"
+            pageEnabled={pageEnabled.albums ?? false}
+            status={pageEnabled.albums ? 'empty' : 'disabled'}
             itemCount={0}
             itemLabel="albums"
             manageLink="/albums"
