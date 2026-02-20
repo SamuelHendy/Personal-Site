@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { X, Star } from 'lucide-react'
 
@@ -30,17 +30,36 @@ interface WatchModalProps {
 }
 
 export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModalProps) {
-  // Lock scrolling when modal is open (block wheel events)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // Prevent page scrolling when modal is open, but allow content scrolling
   useEffect(() => {
-    const blockWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    // Intercept wheel events - allow scrolling only inside content div
+    const handleWheel = (e: WheelEvent) => {
+      if (contentRef.current?.contains(e.target as Node)) {
+        // Allow scrolling inside content - don't prevent default
+        e.stopPropagation()
+      } else {
+        // Block scrolling outside content
+        e.preventDefault()
+        e.stopPropagation()
+      }
     }
-    
-    // Use capture phase and non-passive to block before it reaches the page
-    window.addEventListener('wheel', blockWheel, { capture: true, passive: false })
+
+    // Use capture phase to intercept before Watches page handler
+    window.addEventListener('wheel', handleWheel, { capture: true, passive: false })
+
     return () => {
-      window.removeEventListener('wheel', blockWheel, { capture: true })
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+      window.removeEventListener('wheel', handleWheel, { capture: true })
     }
   }, [])
 
@@ -60,6 +79,8 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
     <motion.div 
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
+      onWheel={(e) => e.preventDefault()}
+      onTouchMove={(e) => e.preventDefault()}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -115,11 +136,9 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
 
         {/* Right box - Content */}
         <motion.div 
-          className="relative"
+          className="relative overflow-hidden"
           style={{ width: '600px', maxWidth: '600px', maxHeight: '80vh' }}
           onClick={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -129,7 +148,7 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
           <div className="rough-border absolute inset-0 border border-[var(--color-text-primary)] bg-[var(--color-background)] pointer-events-none" />
           
           {/* Content div */}
-          <div className="relative p-8 overflow-y-auto h-full overscroll-contain text-rough">
+          <div ref={contentRef} className="relative p-8 pb-12 overflow-y-auto max-h-[80vh] overscroll-contain text-rough">
             {/* Favourite star icon */}
             {watch.Is_Favourite && (
               <div className="absolute top-4 right-4">
