@@ -127,9 +127,9 @@ resource "aws_lambda_function" "image_processor" {
   filename         = local.placeholder_zip
   source_code_hash = local.placeholder_hash
 
-  # Pillow Lambda layer (Klayers community layer for ap-southeast-2)
+  # Pillow Lambda layer (Klayers community layer)
   layers = [
-    "arn:aws:lambda:${var.aws_region}:770693421928:layer:Klayers-p312-Pillow:4"
+    "arn:aws:lambda:${var.aws_region}:770693421928:layer:Klayers-p312-Pillow:10"
   ]
 
   environment {
