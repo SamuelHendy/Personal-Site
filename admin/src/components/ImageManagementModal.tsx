@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, Upload, Trash2, Image, List, Grid, Loader2 } from 'lucide-react'
+import { api } from '../config/api'
 
 interface ImageManagementModalProps {
   isOpen: boolean
@@ -8,16 +9,190 @@ interface ImageManagementModalProps {
   model: string
 }
 
+interface ImageFile {
+  name: string
+  key: string
+}
+
 export default function ImageManagementModal({ isOpen, onClose, brand, model }: ImageManagementModalProps) {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [pendingFiles, setPendingFiles] = useState<string[]>([])
+  const [images, setImages] = useState<ImageFile[]>([])
+  const [thumbnail, setThumbnail] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
+
+  const path = `watches/${brand}/${model}`
+
+  // Fetch processing status
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch(api.admin.imageStatus(path))
+      if (res.ok) {
+        const data = await res.json()
+        setPendingFiles(data.pendingFiles || [])
+        return data.pendingFiles?.length > 0
+      }
+    } catch (err) {
+      console.error('Failed to fetch status:', err)
+    }
+    return false
+  }, [path])
+
+  // Fetch existing images from watch detail API
+  const fetchImages = useCallback(async () => {
+    try {
+      // Use the public watch detail API to get images
+      const baseUrl = import.meta.env.VITE_API_URL || '/api'
+      const res = await fetch(`${baseUrl}/watches/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`)
+      if (res.ok) {
+        const data = await res.json()
+        // Check for thumbnail
+        if (data.Thumbnail) {
+          setThumbnail(data.Thumbnail)
+        }
+        // Map images to our format
+        if (data.Images && data.Images.length > 0) {
+          setImages(data.Images.map((key: string) => ({
+            name: key.split('/').pop() || key,
+            key
+          })))
+        } else {
+          setImages([])
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch images:', err)
+    }
+  }, [brand, model])
+
+  // Initial load and polling setup
+  useEffect(() => {
+    if (!isOpen) return
+
+    const init = async () => {
+      setLoading(true)
+      await Promise.all([fetchStatus(), fetchImages()])
+      setLoading(false)
+    }
+    init()
+
+    // Start polling if there are pending files
+    const startPolling = async () => {
+      const hasPending = await fetchStatus()
+      if (hasPending) {
+        pollingRef.current = setInterval(async () => {
+          const stillPending = await fetchStatus()
+          if (!stillPending) {
+            // Processing complete - refresh images and stop polling
+            await fetchImages()
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current)
+              pollingRef.current = null
+            }
+          }
+        }, 3000) // Poll every 3 seconds
+      }
+    }
+    startPolling()
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [isOpen, fetchStatus, fetchImages])
+
+  // Handle file upload
+  const handleUpload = async (files: FileList, isThumbnail: boolean) => {
+    if (files.length === 0) return
+
+    setUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        // Get presigned URL
+        const res = await fetch(api.admin.imageUpload, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path,
+            filename: file.name,
+            contentType: file.type,
+            isThumbnail
+          })
+        })
+
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error || 'Failed to get upload URL')
+        }
+
+        const { uploadUrl } = await res.json()
+
+        // Upload directly to S3
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type }
+        })
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload file')
+        }
+      }
+
+      // Refresh status to show pending files
+      await fetchStatus()
+
+      // Start polling if not already
+      if (!pollingRef.current) {
+        pollingRef.current = setInterval(async () => {
+          const stillPending = await fetchStatus()
+          if (!stillPending) {
+            await fetchImages()
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current)
+              pollingRef.current = null
+            }
+          }
+        }, 3000)
+      }
+    } catch (err) {
+      console.error('Upload failed:', err)
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Handle drag and drop
+  const handleDrop = (e: React.DragEvent, isThumbnail: boolean) => {
+    e.preventDefault()
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      if (isThumbnail && files.length > 1) {
+        alert('Only one thumbnail allowed')
+        return
+      }
+      handleUpload(files, isThumbnail)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const processingCount = pendingFiles.length
+  const thumbnailExists = thumbnail !== null
   
-  // Hardcoded for now - will be replaced with real data
-  const processingCount = 3
-  const thumbnailExists = true
-  const images = Array.from({ length: 15 }, (_, i) => ({
-    name: `${i + 1}.webp`,
-    url: '/placeholder'
-  }))
+  // Tooltip content for pending files (bullet list format)
+  const pendingFilesTooltip = pendingFiles.length > 0 
+    ? pendingFiles.map(f => `• ${f}`).join('\n') 
+    : 'No files processing'
 
   if (!isOpen) return null
 
@@ -40,41 +215,61 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
 
         {/* Processing Status Banner */}
         {processingCount > 0 && (
-          <div className="alert alert-info mb-4">
+          <div className="alert alert-info mb-4 tooltip tooltip-bottom before:whitespace-pre-line before:text-left" data-tip={pendingFilesTooltip}>
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Processing {processingCount} file{processingCount !== 1 ? 's' : ''}...</span>
           </div>
         )}
 
-        {/* Thumbnail Section */}
-        <div className="mb-6">
-          <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">Thumbnail</h4>
-          <div className="border border-dashed border-base-300 rounded-lg p-4">
-            {thumbnailExists ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 bg-base-200 rounded flex items-center justify-center">
-                    <Image className="w-8 h-8 text-base-content/30" />
-                  </div>
-                  <div>
-                    <p className="font-medium">thumbnail.webp</p>
-                    <p className="text-sm text-base-content/60">Current thumbnail</p>
-                  </div>
-                </div>
-                <button className="btn btn-sm btn-outline">
-                  <Upload className="w-4 h-4" />
-                  Replace
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-4 text-base-content/60">
-                <Upload className="w-8 h-8 mb-2" />
-                <p className="font-medium">Drop thumbnail here</p>
-                <p className="text-sm">or click to browse</p>
-              </div>
-            )}
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-base-content/50" />
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Thumbnail Section */}
+            <div className="mb-6">
+              <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">Thumbnail</h4>
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files && handleUpload(e.target.files, true)}
+              />
+              <div 
+                className="border border-dashed border-base-300 rounded-lg p-4 cursor-pointer hover:border-primary transition-colors"
+                onDrop={(e) => handleDrop(e, true)}
+                onDragOver={handleDragOver}
+                onClick={() => thumbnailInputRef.current?.click()}
+              >
+                {thumbnailExists ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 bg-base-200 rounded flex items-center justify-center">
+                        <Image className="w-8 h-8 text-base-content/30" />
+                      </div>
+                      <div>
+                        <p className="font-medium">thumbnail.webp</p>
+                        <p className="text-sm text-base-content/60">Click or drop to replace</p>
+                      </div>
+                    </div>
+                    {uploading && <Loader2 className="w-5 h-5 animate-spin" />}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-4 text-base-content/60">
+                    {uploading ? (
+                      <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                    ) : (
+                      <Upload className="w-8 h-8 mb-2" />
+                    )}
+                    <p className="font-medium">Drop thumbnail here</p>
+                    <p className="text-sm">or click to browse</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
         {/* Additional Images Section */}
         <div>
@@ -151,14 +346,33 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
           )}
 
           {/* Upload Zone */}
-          <div className="mt-4 border border-dashed border-base-300 rounded-lg p-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => e.target.files && handleUpload(e.target.files, false)}
+          />
+          <div 
+            className="mt-4 border border-dashed border-base-300 rounded-lg p-4 cursor-pointer hover:border-primary transition-colors"
+            onDrop={(e) => handleDrop(e, false)}
+            onDragOver={handleDragOver}
+            onClick={() => fileInputRef.current?.click()}
+          >
             <div className="flex flex-col items-center justify-center py-2 text-base-content/60">
-              <Upload className="w-6 h-6 mb-1" />
+              {uploading ? (
+                <Loader2 className="w-6 h-6 mb-1 animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6 mb-1" />
+              )}
               <p className="text-sm font-medium">Drop images here to add</p>
               <p className="text-xs">or click to browse</p>
             </div>
           </div>
         </div>
+          </>
+        )}
 
         {/* Footer */}
         <div className="modal-action">
