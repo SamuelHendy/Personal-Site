@@ -95,8 +95,9 @@ export default function Watches() {
       if (!res.ok) throw new Error('Failed to fetch display config')
       const data = await res.json()
       // Extract just the field booleans (exclude ConfigType and ConfigKey)
-      const { ConfigType, ConfigKey, ...fields } = data
-      setDisplayConfig(fields)
+      delete data.ConfigType
+      delete data.ConfigKey
+      setDisplayConfig(data)
     } catch (err) {
       console.error('Failed to load display config:', err)
       setDisplayConfig({})
@@ -119,7 +120,7 @@ export default function Watches() {
         body: JSON.stringify({ ...displayConfig, [fieldKey]: newValue }),
       })
       if (!res.ok) throw new Error('Failed to update display config')
-    } catch (err) {
+    } catch {
       // Revert on error
       setDisplayConfig(prev => ({ ...prev, [fieldKey]: currentValue }))
       alert('Failed to update display config')
