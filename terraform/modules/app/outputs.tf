@@ -28,3 +28,18 @@ output "custom_domain" {
   description = "Custom domain name (if configured)"
   value       = var.domain_name
 }
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID for admin authentication"
+  value       = aws_cognito_user_pool.admin.id
+}
+
+output "cognito_client_id" {
+  description = "Cognito App Client ID for admin frontend"
+  value       = aws_cognito_user_pool_client.admin.id
+}
+
+output "admin_bucket_name" {
+  description = "S3 bucket for admin UI"
+  value       = aws_s3_bucket.admin_ui.id
+}

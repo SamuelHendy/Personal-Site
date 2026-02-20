@@ -1,0 +1,65 @@
+name: Deploy Admin UI (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      admin_bucket_name:
+        description: 'S3 bucket name for Admin UI'
+        type: string
+        required: true
+      cloudfront_distribution_id:
+        description: 'CloudFront distribution ID'
+        type: string
+        required: true
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'AWS Role ARN for OIDC'
+        required: true
+
+env:
+  AWS_REGION: "eu-west-2"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: Build
+        working-directory: admin
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHub-OIDC-ADMIN-DEPLOY
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        working-directory: admin
+        run: |
+          aws s3 sync dist/ s3://${{ inputs.admin_bucket_name }}/ --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ inputs.cloudfront_distribution_id }} \
+            --paths "/admin/*"

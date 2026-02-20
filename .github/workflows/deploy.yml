@@ -23,6 +23,7 @@ jobs:
       deploy-frontend: ${{ steps.check.outputs.deploy-frontend }}
       deploy-backend: ${{ steps.check.outputs.deploy-backend }}
       deploy-terraform: ${{ steps.check.outputs.deploy-terraform }}
+      deploy-admin: ${{ steps.check.outputs.deploy-admin }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,6 +59,13 @@ jobs:
           else
             echo "deploy-terraform=false" >> $GITHUB_OUTPUT
           fi
+          
+          if echo "$CURRENT_LABELS" | grep -q "deploy-admin"; then
+            echo "🚀 Admin deployment label found"
+            echo "deploy-admin=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy-admin=false" >> $GITHUB_OUTPUT
+          fi
 
   deploy-terraform:
     needs: check-labels
@@ -89,6 +97,19 @@ jobs:
     uses: ./.github/workflows/deploy_frontend.yml
     with:
       ui_bucket_name: ${{ vars.UI_BUCKET_NAME }}
+      cloudfront_distribution_id: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+    secrets:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+
+  deploy-admin:
+    needs: [check-labels, deploy-terraform]
+    if: |
+      always() &&
+      needs.check-labels.outputs.deploy-admin == 'true' &&
+      (needs.deploy-terraform.result == 'success' || needs.deploy-terraform.result == 'skipped')
+    uses: ./.github/workflows/deploy_admin.yml
+    with:
+      admin_bucket_name: ${{ vars.ADMIN_BUCKET_NAME }}
       cloudfront_distribution_id: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
     secrets:
       AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
