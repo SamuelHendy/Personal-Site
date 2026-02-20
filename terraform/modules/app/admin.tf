@@ -39,7 +39,7 @@ resource "aws_s3_bucket_policy" "admin_ui" {
   })
 }
 
-# CloudFront Function to strip /admin/ prefix
+# CloudFront Function to handle /admin routing
 resource "aws_cloudfront_function" "admin_rewrite" {
   name    = "admin-path-rewrite"
   runtime = "cloudfront-js-2.0"
@@ -54,18 +54,35 @@ resource "aws_cloudfront_function" "admin_rewrite" {
         uri = uri.replace(/^\/admin/, '');
       }
       
-      // Handle SPA routing - if no extension, serve index.html
-      if (!uri.includes('.')) {
+      // Handle root or empty path
+      if (uri === '' || uri === '/') {
         uri = '/index.html';
       }
-      
-      // Handle root
-      if (uri === '' || uri === '/') {
+      // Handle SPA routing - if no file extension, serve index.html
+      else if (!uri.includes('.')) {
         uri = '/index.html';
       }
       
       request.uri = uri;
       return request;
+    }
+  EOF
+}
+
+# CloudFront Function to redirect /admin to /admin/
+resource "aws_cloudfront_function" "admin_redirect" {
+  name    = "admin-path-redirect"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      return {
+        statusCode: 301,
+        statusDescription: 'Moved Permanently',
+        headers: {
+          'location': { value: '/admin/' }
+        }
+      };
     }
   EOF
 }

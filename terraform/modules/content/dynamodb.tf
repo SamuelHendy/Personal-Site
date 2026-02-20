@@ -51,3 +51,26 @@ resource "aws_dynamodb_table" "fishtank_timeline" {
 
   tags = local.fishtank_timeline_table_tags
 }
+
+# Site config table - stores display_config, page toggles, etc.
+resource "aws_dynamodb_table" "site_config" {
+  name         = "site-config"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "ConfigType"
+  range_key    = "ConfigKey"
+
+  attribute {
+    name = "ConfigType"
+    type = "S"
+  }
+
+  attribute {
+    name = "ConfigKey"
+    type = "S"
+  }
+
+  tags = merge(local.common_tags, {
+    Name    = "site-config"
+    Purpose = "Site configuration and display settings"
+  })
+}

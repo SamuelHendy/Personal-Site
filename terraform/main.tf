@@ -80,4 +80,5 @@ module "app" {
   watches_table_name            = module.content.watches_table_name
   fishtank_residents_table_name = module.content.fishtank_residents_table_name
   fishtank_timeline_table_name  = module.content.fishtank_timeline_table_name
+  site_config_table_name        = module.content.site_config_table_name
 }

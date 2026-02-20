@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import { Linkedin, Github, Instagram, Music, Camera, ChevronRight } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { api } from '../config/api'
+
+interface PageEnabledConfig {
+  watches?: boolean
+  fishtank?: boolean
+  albums?: boolean
+}
 
 export default function MainNav() {
   const ref = useRef(null)
@@ -9,6 +16,19 @@ export default function MainNav() {
     target: ref,
     offset: ["start end", "end start"]
   })
+
+  const [pageEnabled, setPageEnabled] = useState<PageEnabledConfig>({})
+
+  useEffect(() => {
+    fetch(api.config('page_enabled', 'root'))
+      .then(res => res.json())
+      .then(data => {
+        delete data.ConfigType
+        delete data.ConfigKey
+        setPageEnabled(data)
+      })
+      .catch(() => setPageEnabled({}))
+  }, [])
 
   const handleScrollDown = () => {
     // Scroll to next section (2 viewport heights) - absolute position
@@ -40,13 +60,22 @@ export default function MainNav() {
           </motion.div>
           
           <motion.div style={{ x: watchesX }} className="w-full md:w-2/3">
-            <Link 
-              to="/watches"
-              className="rough-border border border-[var(--color-text-primary)] p-[var(--spacing-md)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors block flex items-center justify-between"
-            >
-              <h2 className="text-2xl font-bold">Watches</h2>
-              <ChevronRight size={24} />
-            </Link>
+            {pageEnabled.watches ? (
+              <Link 
+                to="/watches"
+                className="rough-border border border-[var(--color-text-primary)] p-[var(--spacing-md)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors block flex items-center justify-between"
+              >
+                <h2 className="text-2xl font-bold">Watches</h2>
+                <ChevronRight size={24} />
+              </Link>
+            ) : (
+              <div 
+                className="rough-border border border-[var(--color-text-primary)] p-[var(--spacing-md)] text-[var(--color-text-primary)] opacity-40 cursor-not-allowed block flex items-center justify-between"
+              >
+                <h2 className="text-2xl font-bold line-through">Watches</h2>
+                <ChevronRight size={24} />
+              </div>
+            )}
           </motion.div>
         </div>
 

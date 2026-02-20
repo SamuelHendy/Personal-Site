@@ -1,0 +1,20 @@
+meta {
+  name: Specific Album
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{domain}}/albums/{{album_name}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  album_name: Cars
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

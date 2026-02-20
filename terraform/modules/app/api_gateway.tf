@@ -5,12 +5,25 @@ resource "aws_apigatewayv2_api" "main" {
 
   cors_configuration {
     allow_origins = ["*"]
-    allow_methods = ["GET", "OPTIONS"]
-    allow_headers = ["Content-Type"]
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization"]
     max_age       = 300
   }
 
   tags = local.api_gateway_tags
+}
+
+# Cognito JWT Authorizer for Admin routes
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  api_id           = aws_apigatewayv2_api.main.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "cognito-admin"
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.admin.id]
+    issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.admin.id}"
+  }
 }
 
 resource "aws_apigatewayv2_stage" "main" {
@@ -196,4 +209,114 @@ resource "aws_apigatewayv2_route" "fishtank_timeline" {
   api_id    = aws_apigatewayv2_api.main.id
   route_key = "GET /api/fishtank/timeline"
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_timeline.id}"
+}
+
+# Public Config Lambda (read-only)
+resource "aws_lambda_permission" "config" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.config.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "config" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.config.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "config" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/config/{config_type}/{config_key}"
+  target    = "integrations/${aws_apigatewayv2_integration.config.id}"
+}
+
+# ============================================
+# Admin API Routes (protected by Cognito JWT)
+# ============================================
+
+# Admin Watches Lambda permission
+resource "aws_lambda_permission" "admin_watches" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_watches.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Watches integration
+resource "aws_apigatewayv2_integration" "admin_watches" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_watches.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Watches routes - all protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_watches_list" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/watches"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_watches.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_watches_create" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /api/admin/watches"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_watches.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_watches_update" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/watches/{brand}/{model}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_watches.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_watches_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/watches/{brand}/{model}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_watches.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# Admin Config Lambda permission
+resource "aws_lambda_permission" "admin_config" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_config.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Config integration
+resource "aws_apigatewayv2_integration" "admin_config" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_config.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Config routes - protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_config_get" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/config/{config_type}/{config_key}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_config.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_config_put" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/config/{config_type}/{config_key}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_config.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }

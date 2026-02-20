@@ -1,7 +1,10 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function AdminLayout() {
+  const { logout } = useAuth()
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="navbar bg-base-100 shadow-lg px-4">
@@ -28,7 +31,7 @@ export default function AdminLayout() {
           </ul>
         </div>
         <div className="navbar-end">
-          <button className="btn btn-ghost btn-circle">
+          <button className="btn btn-ghost btn-circle" onClick={logout} title="Sign out">
             <LogOut className="h-5 w-5" />
           </button>
         </div>

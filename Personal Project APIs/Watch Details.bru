@@ -1,0 +1,21 @@
+meta {
+  name: Watch Details
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{domain}}/watches/{{brand}}/{{model}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  brand: Tissot
+  model: Le Locle
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
