@@ -115,6 +115,13 @@ resource "aws_cloudfront_distribution" "main" {
     origin_access_control_id = aws_cloudfront_origin_access_control.content.id
   }
 
+  # Admin UI S3 origin
+  origin {
+    domain_name              = aws_s3_bucket.admin_ui.bucket_regional_domain_name
+    origin_id                = "S3-Admin"
+    origin_access_control_id = aws_cloudfront_origin_access_control.admin.id
+  }
+
   # Default behavior - S3 UI
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
@@ -232,6 +239,32 @@ resource "aws_cloudfront_distribution" "main" {
     min_ttl     = 0
     default_ttl = 86400   # 1 day
     max_ttl     = 2592000 # 30 days
+  }
+
+  # Admin UI behavior
+  ordered_cache_behavior {
+    path_pattern           = "/admin/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-Admin"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.admin_rewrite.arn
+    }
+
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
   }
 
   # SPA routing - return index.html for 404s

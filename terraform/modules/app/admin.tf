@@ -1,0 +1,79 @@
+# S3 bucket for Admin UI
+resource "aws_s3_bucket" "admin_ui" {
+  bucket = "shendy-personal-site-admin"
+
+  tags = merge(local.common_tags, {
+    Name = "personal-site-admin-ui"
+  })
+}
+
+resource "aws_s3_bucket_public_access_block" "admin_ui" {
+  bucket = aws_s3_bucket.admin_ui.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "admin_ui" {
+  bucket = aws_s3_bucket.admin_ui.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontOAC"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.admin_ui.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.main.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# CloudFront Function to strip /admin/ prefix
+resource "aws_cloudfront_function" "admin_rewrite" {
+  name    = "admin-path-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      
+      // Strip /admin prefix
+      if (uri.startsWith('/admin')) {
+        uri = uri.replace(/^\/admin/, '');
+      }
+      
+      // Handle SPA routing - if no extension, serve index.html
+      if (!uri.includes('.')) {
+        uri = '/index.html';
+      }
+      
+      // Handle root
+      if (uri === '' || uri === '/') {
+        uri = '/index.html';
+      }
+      
+      request.uri = uri;
+      return request;
+    }
+  EOF
+}
+
+# OAC for admin bucket
+resource "aws_cloudfront_origin_access_control" "admin" {
+  name                              = "admin-ui-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
