@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { X, Star, GripHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { DisplayConfig } from '../contexts/DisplayConfigContext'
+import { cdn, api } from '../config/api'
 
 interface Watch {
   Brand: string
@@ -22,6 +23,8 @@ interface Watch {
   Lug_Width?: number
   Acquired_Condition?: string
   Is_Favourite?: boolean
+  Thumbnail?: string
+  Images?: string[]
 }
 
 interface MobileWatchModalProps {
@@ -37,7 +40,9 @@ export default function MobileWatchModal({ watch, onClose, displayConfig }: Mobi
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   const placeholderUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(watch.Brand)}`
-  const [imageSrc, setImageSrc] = useState(placeholderUrl)
+  const [images, setImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageLoadError, setImageLoadError] = useState(false)
   
   // Calculate image height based on 3:4 aspect ratio
   const imageHeight = (window.innerWidth * 4) / 3
@@ -70,6 +75,33 @@ export default function MobileWatchModal({ watch, onClose, displayConfig }: Mobi
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
+  // Fetch full watch details including images
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch(api.watchDetail(watch.Brand, watch.Model))
+        if (res.ok) {
+          const data = await res.json()
+          if (data.Images && data.Images.length > 0) {
+            setImages(data.Images.map((img: string) => cdn.watches(img)))
+          } else if (watch.Thumbnail) {
+            setImages([cdn.watches(watch.Thumbnail)])
+          }
+        }
+      } catch {
+        if (watch.Thumbnail) {
+          setImages([cdn.watches(watch.Thumbnail)])
+        }
+      }
+    }
+    fetchImages()
+  }, [watch.Brand, watch.Model, watch.Thumbnail])
+
+  // Current image URL with fallback to placeholder
+  const currentImageUrl = images.length > 0 && !imageLoadError 
+    ? images[currentImageIndex] 
+    : placeholderUrl
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -87,13 +119,34 @@ export default function MobileWatchModal({ watch, onClose, displayConfig }: Mobi
       </button>
 
       {/* Image - 3:4 aspect ratio at top, stays fixed */}
-      <div className="w-full bg-[var(--color-surface)] overflow-hidden flex-shrink-0" style={{ aspectRatio: '3/4' }} onClick={onClose}>
+      <div className="w-full bg-[var(--color-surface)] overflow-hidden flex-shrink-0 relative" style={{ aspectRatio: '3/4' }} onClick={onClose}>
         <img
-          src={imageSrc}
+          src={currentImageUrl}
           alt={`${watch.Brand} ${watch.Model}`}
           className="w-full h-full object-cover"
-          onError={() => setImageSrc(`https://placehold.co/600x800/e5e5e5/525252?text=${watch.Model}`)}
+          onError={() => setImageLoadError(true)}
         />
+        
+        {/* Dot indicators for multiple images */}
+        {images.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCurrentImageIndex(index)
+                }}
+                className={`h-2 rounded-full transition-all ${
+                  index === currentImageIndex 
+                    ? 'bg-white w-6' 
+                    : 'bg-white/50 w-2'
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content area - overlays image when expanded */}

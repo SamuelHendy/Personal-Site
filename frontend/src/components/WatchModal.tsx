@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Star } from 'lucide-react'
+import { X, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { DisplayConfig } from '../contexts/DisplayConfigContext'
+import { cdn, api } from '../config/api'
 
 interface Watch {
   Brand: string
@@ -22,6 +23,8 @@ interface Watch {
   Lug_Width?: number
   Acquired_Condition?: string
   Is_Favourite?: boolean
+  Thumbnail?: string
+  Images?: string[]
 }
 
 interface WatchModalProps {
@@ -36,6 +39,11 @@ const show = (config: DisplayConfig, field: keyof DisplayConfig): boolean => con
 
 export default function WatchModal({ watch, onClose, thumbnailRect, displayConfig }: WatchModalProps) {
   const contentRef = useRef<HTMLDivElement>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageLoadError, setImageLoadError] = useState(false)
+  
+  const placeholderUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(watch.Brand)}`
 
   // Prevent page scrolling when modal is open, but allow content scrolling
   useEffect(() => {
@@ -79,6 +87,42 @@ export default function WatchModal({ watch, onClose, thumbnailRect, displayConfi
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
+
+  // Fetch full watch details including images
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch(api.watchDetail(watch.Brand, watch.Model))
+        if (res.ok) {
+          const data = await res.json()
+          if (data.Images && data.Images.length > 0) {
+            setImages(data.Images.map((img: string) => cdn.watches(img)))
+          } else if (watch.Thumbnail) {
+            setImages([cdn.watches(watch.Thumbnail)])
+          }
+        }
+      } catch {
+        // If fetch fails, try thumbnail
+        if (watch.Thumbnail) {
+          setImages([cdn.watches(watch.Thumbnail)])
+        }
+      }
+    }
+    fetchImages()
+  }, [watch.Brand, watch.Model, watch.Thumbnail])
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
+  }
+
+  const goToPreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  // Current image URL with fallback to placeholder
+  const currentImageUrl = images.length > 0 && !imageLoadError 
+    ? images[currentImageIndex] 
+    : placeholderUrl
 
   return (
     <motion.div 
@@ -133,10 +177,47 @@ export default function WatchModal({ watch, onClose, thumbnailRect, displayConfi
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
           <img
-            src="https://placehold.co/900x1200/e5e5e5/525252?text=Watch"
-            alt="Watch"
+            src={currentImageUrl}
+            alt={`${watch.Brand} ${watch.Model}`}
             className="max-w-full max-h-full w-auto h-auto object-contain border-[12px] border-white"
+            onError={() => setImageLoadError(true)}
           />
+          
+          {/* Navigation arrows - only show if multiple images */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={goToPreviousImage}
+                className="rough-border absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 border border-[var(--color-text-primary)] bg-black/60 backdrop-blur-sm hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-white z-20"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={goToNextImage}
+                className="rough-border absolute -right-6 top-1/2 -translate-y-1/2 w-12 h-12 border border-[var(--color-text-primary)] bg-black/60 backdrop-blur-sm hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-white z-20"
+                aria-label="Next image"
+              >
+                <ChevronRight size={24} />
+              </button>
+
+              {/* Dot indicators */}
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? 'bg-white w-6' 
+                        : 'bg-white/50 w-2'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* Right box - Content */}
