@@ -264,3 +264,37 @@ resource "aws_apigatewayv2_route" "admin_watches_delete" {
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
+
+# Admin Config Lambda permission
+resource "aws_lambda_permission" "admin_config" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_config.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Config integration
+resource "aws_apigatewayv2_integration" "admin_config" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_config.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Config routes - protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_config_get" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/config/{config_type}/{config_key}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_config.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_config_put" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/config/{config_type}/{config_key}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_config.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}

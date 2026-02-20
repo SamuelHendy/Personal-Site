@@ -29,6 +29,7 @@ from personal_api_watch_detail.handler import lambda_handler as watch_detail_han
 from personal_api_fishtank_residents.handler import lambda_handler as fishtank_residents_handler
 from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_timeline_handler
 from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
+from personal_api_admin_config.handler import lambda_handler as admin_config_handler
 
 app = Flask(__name__)
 CORS(app)
@@ -117,6 +118,12 @@ def admin_watch_detail(brand, model):
     return invoke_lambda(admin_watches_handler, path_params={'brand': brand, 'model': model}, body=body)
 
 
+@app.route('/admin/config/<config_type>/<config_key>', methods=['GET', 'PUT'])
+def admin_config(config_type, config_key):
+    body = request.get_data(as_text=True) if request.method == 'PUT' else None
+    return invoke_lambda(admin_config_handler, path_params={'config_type': config_type, 'config_key': config_key}, body=body)
+
+
 if __name__ == '__main__':
     if args.profile:
         print(f"Using AWS profile: {args.profile}")
@@ -138,5 +145,7 @@ if __name__ == '__main__':
     print("  POST   /admin/watches               - Create watch")
     print("  PUT    /admin/watches/<brand>/<model> - Update watch")
     print("  DELETE /admin/watches/<brand>/<model> - Delete watch")
+    print("  GET    /admin/config/<type>/<key>    - Get config")
+    print("  PUT    /admin/config/<type>/<key>    - Update config")
     print("")
     app.run(debug=True, host='0.0.0.0', port=5000)

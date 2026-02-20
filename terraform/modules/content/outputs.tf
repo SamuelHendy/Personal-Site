@@ -74,3 +74,12 @@ output "fishtank_timeline_table_arn" {
   value       = aws_dynamodb_table.fishtank_timeline.arn
 }
 
+output "site_config_table_name" {
+  description = "Site config DynamoDB table name"
+  value       = aws_dynamodb_table.site_config.name
+}
+
+output "site_config_table_arn" {
+  description = "Site config DynamoDB table ARN"
+  value       = aws_dynamodb_table.site_config.arn
+}

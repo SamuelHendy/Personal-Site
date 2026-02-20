@@ -1,0 +1,20 @@
+meta {
+  name: List Plants
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{domain}}/residents?type=plants
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: plants
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

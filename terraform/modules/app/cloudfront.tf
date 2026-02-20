@@ -241,7 +241,7 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl     = 2592000 # 30 days
   }
 
-  # Admin UI behavior
+  # Admin UI behavior - handles /admin/*
   ordered_cache_behavior {
     path_pattern           = "/admin/*"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
@@ -260,6 +260,32 @@ resource "aws_cloudfront_distribution" "main" {
     function_association {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.admin_rewrite.arn
+    }
+
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
+  }
+
+  # Admin redirect - /admin to /admin/
+  ordered_cache_behavior {
+    path_pattern           = "/admin"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-Admin"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.admin_redirect.arn
     }
 
     min_ttl     = 0

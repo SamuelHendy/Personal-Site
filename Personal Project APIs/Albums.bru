@@ -1,0 +1,15 @@
+meta {
+  name: Albums
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{domain}}/albums
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

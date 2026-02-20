@@ -71,6 +71,11 @@ variable "fishtank_timeline_table_name" {
   type        = string
 }
 
+variable "site_config_table_name" {
+  description = "Site config DynamoDB table name"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Custom domain name for CloudFront (e.g., samhendy.com)"
   type        = string

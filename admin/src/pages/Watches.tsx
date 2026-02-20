@@ -1,5 +1,27 @@
-import { useState } from 'react'
-import { Plus, Clock, Pencil, Trash2, Star, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings } from 'lucide-react'
+import { api } from '../config/api'
+
+// Fields that can be toggled for display on the public site
+const DISPLAY_FIELDS = [
+  { key: 'Dial_Colour', label: 'Dial Colour' },
+  { key: 'Case_Width', label: 'Case Width' },
+  { key: 'Movement_Type', label: 'Movement Type' },
+  { key: 'Movement_Name', label: 'Movement Name' },
+  { key: 'Manufactured_Year', label: 'Manufactured Year' },
+  { key: 'Obtained_Date', label: 'Obtained Date' },
+  { key: 'Description', label: 'Description' },
+  { key: 'Purchase_Price', label: 'Purchase Price' },
+  { key: 'Acquired_From', label: 'Acquired From' },
+  { key: 'Beats_Per_Hour', label: 'Beats Per Hour' },
+  { key: 'Glass', label: 'Glass' },
+  { key: 'Case_Material', label: 'Case Material' },
+  { key: 'Caseback_Window', label: 'Caseback Window' },
+  { key: 'Lug_Width', label: 'Lug Width' },
+  { key: 'Acquired_Condition', label: 'Acquired Condition' },
+] as const
+
+type DisplayConfig = Record<string, boolean>
 
 interface Watch {
   Brand: string
@@ -46,17 +68,78 @@ const emptyWatch: Partial<Watch> = {
 }
 
 export default function Watches() {
-  // TODO: Replace with API call
-  const [watches, setWatches] = useState<Watch[]>([
-    { Brand: 'Omega', Model: 'Speedmaster Professional', Is_Favourite: true, Enabled: true },
-    { Brand: 'Seiko', Model: 'Presage', Is_Favourite: false, Enabled: true },
-    { Brand: 'Orient', Model: 'Bambino', Is_Favourite: false, Enabled: false },
-  ])
+  const [watches, setWatches] = useState<Watch[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWatch, setEditingWatch] = useState<Partial<Watch> | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [watchToDelete, setWatchToDelete] = useState<Watch | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Display config state
+  const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
+  const [displayConfigLoading, setDisplayConfigLoading] = useState(true)
+
+  // Fetch watches and display config on mount
+  useEffect(() => {
+    fetchWatches()
+    fetchDisplayConfig()
+  }, [])
+
+  const fetchDisplayConfig = async () => {
+    try {
+      setDisplayConfigLoading(true)
+      const res = await fetch(api.admin.config('display_config', 'watches'))
+      if (!res.ok) throw new Error('Failed to fetch display config')
+      const data = await res.json()
+      // Extract just the field booleans (exclude ConfigType and ConfigKey)
+      const { ConfigType, ConfigKey, ...fields } = data
+      setDisplayConfig(fields)
+    } catch (err) {
+      console.error('Failed to load display config:', err)
+      setDisplayConfig({})
+    } finally {
+      setDisplayConfigLoading(false)
+    }
+  }
+
+  const handleToggleDisplayField = async (fieldKey: string) => {
+    const currentValue = displayConfig[fieldKey] ?? false
+    const newValue = !currentValue
+    
+    // Optimistic update
+    setDisplayConfig(prev => ({ ...prev, [fieldKey]: newValue }))
+    
+    try {
+      const res = await fetch(api.admin.config('display_config', 'watches'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...displayConfig, [fieldKey]: newValue }),
+      })
+      if (!res.ok) throw new Error('Failed to update display config')
+    } catch (err) {
+      // Revert on error
+      setDisplayConfig(prev => ({ ...prev, [fieldKey]: currentValue }))
+      alert('Failed to update display config')
+    }
+  }
+
+  const fetchWatches = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch(api.admin.watches)
+      if (!res.ok) throw new Error('Failed to fetch watches')
+      const data = await res.json()
+      setWatches(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleAddWatch = () => {
     setEditingWatch({ ...emptyWatch })
@@ -73,52 +156,102 @@ export default function Watches() {
     setIsDeleteModalOpen(true)
   }
 
-  const handleDeleteConfirm = () => {
-    if (watchToDelete) {
-      // TODO: Call API to delete
+  const handleDeleteConfirm = async () => {
+    if (!watchToDelete) return
+    
+    try {
+      setIsSaving(true)
+      const res = await fetch(api.admin.watch(watchToDelete.Brand, watchToDelete.Model), {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete watch')
       setWatches(watches.filter(w => !(w.Brand === watchToDelete.Brand && w.Model === watchToDelete.Model)))
       setIsDeleteModalOpen(false)
       setWatchToDelete(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  const handleToggleEnabled = (watch: Watch) => {
-    // TODO: Call API to update
-    setWatches(watches.map(w => 
-      w.Brand === watch.Brand && w.Model === watch.Model 
-        ? { ...w, Enabled: !w.Enabled } 
-        : w
-    ))
+  const handleToggleEnabled = async (watch: Watch) => {
+    try {
+      const res = await fetch(api.admin.watch(watch.Brand, watch.Model), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Enabled: !watch.Enabled }),
+      })
+      if (!res.ok) throw new Error('Failed to update')
+      setWatches(watches.map(w => 
+        w.Brand === watch.Brand && w.Model === watch.Model 
+          ? { ...w, Enabled: !w.Enabled } 
+          : w
+      ))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update')
+    }
   }
 
-  const handleToggleFavourite = (watch: Watch) => {
-    // TODO: Call API to update
-    setWatches(watches.map(w => 
-      w.Brand === watch.Brand && w.Model === watch.Model 
-        ? { ...w, Is_Favourite: !w.Is_Favourite } 
-        : w
-    ))
+  const handleToggleFavourite = async (watch: Watch) => {
+    try {
+      const res = await fetch(api.admin.watch(watch.Brand, watch.Model), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Is_Favourite: !watch.Is_Favourite }),
+      })
+      if (!res.ok) throw new Error('Failed to update')
+      setWatches(watches.map(w => 
+        w.Brand === watch.Brand && w.Model === watch.Model 
+          ? { ...w, Is_Favourite: !w.Is_Favourite } 
+          : w
+      ))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update')
+    }
   }
 
-  const handleSaveWatch = () => {
+  const handleSaveWatch = async () => {
     if (!editingWatch?.Brand || !editingWatch?.Model) return
     
-    const existingIndex = watches.findIndex(
+    const isNew = !watches.some(
       w => w.Brand === editingWatch.Brand && w.Model === editingWatch.Model
     )
     
-    if (existingIndex >= 0) {
-      // Update existing
-      // TODO: Call API to update
-      setWatches(watches.map((w, i) => i === existingIndex ? editingWatch as Watch : w))
-    } else {
-      // Add new
-      // TODO: Call API to create
-      setWatches([...watches, editingWatch as Watch])
+    try {
+      setIsSaving(true)
+      
+      if (isNew) {
+        // Create new
+        const res = await fetch(api.admin.watches, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingWatch),
+        })
+        if (!res.ok) throw new Error('Failed to create watch')
+        setWatches([...watches, editingWatch as Watch])
+      } else {
+        // Update existing
+        const res = await fetch(api.admin.watch(editingWatch.Brand, editingWatch.Model), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingWatch),
+        })
+        if (!res.ok) throw new Error('Failed to update watch')
+        setWatches(watches.map(w => 
+          w.Brand === editingWatch.Brand && w.Model === editingWatch.Model 
+            ? editingWatch as Watch 
+            : w
+        ))
+      }
+      
+      setIsModalOpen(false)
+      setEditingWatch(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setIsSaving(false)
     }
-    
-    setIsModalOpen(false)
-    setEditingWatch(null)
   }
 
   const isNewWatch = editingWatch && !watches.some(
@@ -138,10 +271,13 @@ export default function Watches() {
         </button>
       </div>
 
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body p-0">
-          <div className="overflow-x-auto">
-            <table className="table">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left side - Watches Table (2/3) */}
+        <div className="lg:w-2/3">
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body p-0">
+              <div className="overflow-x-auto">
+                <table className="table">
               <thead>
                 <tr className="bg-base-200">
                   <th>Brand</th>
@@ -152,7 +288,26 @@ export default function Watches() {
                 </tr>
               </thead>
               <tbody>
-                {watches.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="flex flex-col items-center justify-center py-12 text-base-content/60">
+                        <Loader2 className="w-12 h-12 mb-4 animate-spin opacity-50" />
+                        <p className="font-medium">Loading watches...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="flex flex-col items-center justify-center py-12 text-error">
+                        <p className="font-medium">Error loading watches</p>
+                        <p className="text-sm">{error}</p>
+                        <button className="btn btn-sm btn-ghost mt-2" onClick={fetchWatches}>Retry</button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : watches.length === 0 ? (
                   <tr>
                     <td colSpan={5}>
                       <div className="flex flex-col items-center justify-center py-12 text-base-content/60">
@@ -164,14 +319,14 @@ export default function Watches() {
                   </tr>
                 ) : (
                   watches.map((watch) => (
-                    <tr key={`${watch.Brand}-${watch.Model}`} className={!watch.Enabled ? 'opacity-50' : ''}>
+                    <tr key={`${watch.Brand}-${watch.Model}`} className={!(watch.Enabled ?? false) ? 'opacity-50' : ''}>
                       <td className="font-medium">{watch.Brand}</td>
                       <td>{watch.Model}</td>
                       <td className="text-center">
                         <input 
                           type="checkbox" 
                           className="toggle toggle-success toggle-sm" 
-                          checked={watch.Enabled ?? true}
+                          checked={watch.Enabled ?? false}
                           onChange={() => handleToggleEnabled(watch)}
                         />
                       </td>
@@ -202,8 +357,45 @@ export default function Watches() {
                     </tr>
                   ))
                 )}
-              </tbody>
-            </table>
+                </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Display Config (1/3) */}
+        <div className="lg:w-1/3">
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <div className="flex items-center gap-2 mb-4">
+                <Settings className="w-5 h-5" />
+                <h2 className="card-title text-lg">Field Visibility</h2>
+              </div>
+              <p className="text-sm text-base-content/60 mb-4">
+                Control which fields are shown on the public site
+              </p>
+              
+              {displayConfigLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {DISPLAY_FIELDS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center justify-between cursor-pointer py-1">
+                      <span className="text-sm">{label}</span>
+                      <input 
+                        type="checkbox" 
+                        className="toggle toggle-sm toggle-primary" 
+                        checked={displayConfig[key] ?? false}
+                        onChange={() => handleToggleDisplayField(key)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -461,9 +653,9 @@ export default function Watches() {
             <button 
               className="btn btn-primary"
               onClick={handleSaveWatch}
-              disabled={!editingWatch?.Brand || !editingWatch?.Model}
+              disabled={!editingWatch?.Brand || !editingWatch?.Model || isSaving}
             >
-              {isNewWatch ? 'Add' : 'Save'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : isNewWatch ? 'Add' : 'Save'}
             </button>
           </div>
         </div>

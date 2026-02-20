@@ -211,7 +211,7 @@ resource "aws_lambda_function" "fishtank_timeline" {
 # Admin Watches CRUD lambda (protected by Cognito)
 resource "aws_lambda_function" "admin_watches" {
   function_name = "personal-api-admin-watches"
-  role          = aws_iam_role.lambda.arn
+  role          = aws_iam_role.lambda_admin.arn
   handler       = "handler.lambda_handler"
   runtime       = local.lambda_runtime
   timeout       = local.lambda_timeout
@@ -229,6 +229,34 @@ resource "aws_lambda_function" "admin_watches" {
   tags = merge(local.common_tags, {
     Name     = "personal-api-admin-watches"
     Function = "Admin Watches CRUD"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Admin Config lambda (protected by Cognito)
+resource "aws_lambda_function" "admin_config" {
+  function_name = "personal-api-admin-config"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      TABLE_NAME = var.site_config_table_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-admin-config"
+    Function = "Admin Site Config"
   })
 
   lifecycle {
