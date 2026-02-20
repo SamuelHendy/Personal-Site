@@ -27,10 +27,11 @@ Personal portfolio and hobby showcase site built with React, Python Lambda funct
 
 ```
 ├── frontend/          # React frontend application
+├── admin/             # Admin panel (React + DaisyUI)
 ├── backend/           # Python Lambda function handlers
 ├── terraform/         # Infrastructure as Code
 │   ├── modules/
-│   │   ├── app/       # Lambdas, API Gateway, CloudFront, UI bucket
+│   │   ├── app/       # Lambdas, API Gateway, CloudFront, UI bucket, Cognito
 │   │   └── content/   # DynamoDB tables, content S3 buckets
 │   └── main.tf
 └── .github/workflows/ # CI/CD pipelines
@@ -64,7 +65,8 @@ Deployments are triggered via **PR labels**:
 
 | Label | Effect |
 |-------|--------|
-| `deploy-ui` | Build and deploy frontend to S3 |
+| `deploy-frontend` | Build and deploy frontend to S3 |
+| `deploy-admin` | Build and deploy admin panel to S3 |
 | `deploy-backend` | Package and deploy Lambda functions |
 | `deploy-terraform` | Run terraform plan (on PR) / apply (on merge) |
 
@@ -81,6 +83,9 @@ Use the **Terraform Manual** workflow in GitHub Actions:
 | Variable | Description |
 |----------|-------------|
 | `AWS_ROLE_ARN` | ARN of the GitHub Actions IAM role |
+| `UI_BUCKET_NAME` | S3 bucket for frontend (`shendy-personal-site-ui`) |
+| `ADMIN_BUCKET_NAME` | S3 bucket for admin panel (`shendy-personal-site-admin`) |
+| `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID |
 
 ### Cloudflare DNS
 
@@ -103,9 +108,39 @@ Content is served via CloudFront at `/cdn/*` paths, with CloudFront Functions st
 
 | Table | Purpose | Key |
 |-------|---------|-----|
-| `watch-collection` | Watch metadata (brand, model, specs) | `id` |
-| `fishtank-residents` | Fish/coral resident info | `id` |
-| `fishtank-timeline` | Fishtank event timeline | `id` |
+| `watch-collection` | Watch metadata (brand, model, specs) | `Brand` + `Model` |
+| `fishtank-residents` | Fish/coral resident info | `Type` + `Id` |
+| `fishtank-timeline` | Fishtank event timeline | `Id` |
+
+## Admin Panel
+
+The admin panel is available at `samhendy.com/admin` and requires Cognito authentication with TOTP MFA.
+
+### Setting Up Admin Access
+
+After deploying Terraform, you need to manually create your admin user:
+
+1. Go to **AWS Console → Cognito → User Pools → personal-site-admin**
+2. Click **Create user**
+3. Enter your email as the username
+4. Set a temporary password
+5. **Check "Mark email as verified"** (required since self-signup is disabled)
+6. Click **Create user**
+
+On first login at `/admin`:
+1. Enter your email and temporary password
+2. You'll be prompted to set a new password
+3. Set up TOTP by scanning the QR code with an authenticator app (e.g., Duo Mobile)
+4. Enter the TOTP code to complete setup
+
+### Cognito Resources
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| User Pool | `personal-site-admin` | Admin authentication |
+| App Client | `admin-frontend` | Frontend auth (no secret) |
+
+Terraform outputs `cognito_user_pool_id` and `cognito_client_id` for reference.
 
 ## License
 
