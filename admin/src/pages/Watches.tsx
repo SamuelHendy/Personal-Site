@@ -82,10 +82,35 @@ export default function Watches() {
   // Image management modal state
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [imageModalWatch, setImageModalWatch] = useState<Watch | null>(null)
+  
+  // Processing status per watch: { "Brand/Model": ["file1.jpg", "file2.png"] }
+  const [processingStatus, setProcessingStatus] = useState<Record<string, string[]>>({})
 
   // Display config state
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
   const [displayConfigLoading, setDisplayConfigLoading] = useState(true)
+
+  // Fetch processing status for all watches
+  const fetchAllProcessingStatus = async (watchList: Watch[]) => {
+    const statusMap: Record<string, string[]> = {}
+    await Promise.all(
+      watchList.map(async (watch) => {
+        try {
+          const path = `watches/${watch.Brand}/${watch.Model}`
+          const res = await fetch(api.admin.imageStatus(path))
+          if (res.ok) {
+            const data = await res.json()
+            if (data.pendingFiles && data.pendingFiles.length > 0) {
+              statusMap[`${watch.Brand}/${watch.Model}`] = data.pendingFiles
+            }
+          }
+        } catch {
+          // Ignore errors for individual watches
+        }
+      })
+    )
+    setProcessingStatus(statusMap)
+  }
 
   // Fetch watches and display config on mount
   useEffect(() => {
@@ -153,6 +178,8 @@ export default function Watches() {
       if (!res.ok) throw new Error('Failed to fetch watches')
       const data = await res.json()
       setWatches(data)
+      // Also fetch processing status for all watches
+      fetchAllProcessingStatus(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -359,10 +386,15 @@ export default function Watches() {
                       </td>
                       <td>
                         <div className="flex justify-end gap-1">
-                          {/* Hardcoded processing spinner - will be dynamic */}
-                          <span className="w-8 h-8 flex items-center justify-center text-info" title="Processing images...">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          </span>
+                          {/* Processing spinner - shows when watch has pending files */}
+                          {processingStatus[`${watch.Brand}/${watch.Model}`]?.length > 0 && (
+                            <span 
+                              className="w-8 h-8 flex items-center justify-center text-info tooltip tooltip-left before:whitespace-pre-line before:text-left" 
+                              data-tip={processingStatus[`${watch.Brand}/${watch.Model}`].map(f => `• ${f}`).join('\n')}
+                            >
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            </span>
+                          )}
                           <button 
                             className="btn btn-ghost btn-sm btn-square border-0"
                             onClick={() => {
