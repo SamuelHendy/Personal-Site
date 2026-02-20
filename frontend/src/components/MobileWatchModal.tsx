@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { X, Star, GripHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { DisplayConfig } from '../contexts/DisplayConfigContext'
 
 interface Watch {
   Brand: string
@@ -26,9 +27,13 @@ interface Watch {
 interface MobileWatchModalProps {
   watch: Watch
   onClose: () => void
+  displayConfig: DisplayConfig
 }
 
-export default function MobileWatchModal({ watch, onClose }: MobileWatchModalProps) {
+// Helper to check if a field should be shown (defaults to false)
+const show = (config: DisplayConfig, field: keyof DisplayConfig): boolean => config[field] ?? false
+
+export default function MobileWatchModal({ watch, onClose, displayConfig }: MobileWatchModalProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   const placeholderUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(watch.Brand)}`
@@ -140,63 +145,71 @@ export default function MobileWatchModal({ watch, onClose }: MobileWatchModalPro
         <div>
           <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3" style={{ filter: 'url(#roughen)', letterSpacing: '0.03em' }}>Specifications</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
-              <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{watch.Movement_Type}</span>
-            </div>
-            {watch.Movement_Name && (
+            {show(displayConfig, 'Movement_Type') && (
+              <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
+                <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Movement_Type}</span>
+              </div>
+            )}
+            {show(displayConfig, 'Movement_Name') && watch.Movement_Name && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">{watch.Movement_Type === 'Quartz' ? 'Module:' : 'Calibre:'}</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Movement_Name}</span>
               </div>
             )}
-            {watch.Beats_Per_Hour && (
+            {show(displayConfig, 'Beats_Per_Hour') && watch.Beats_Per_Hour && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Frequency:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Beats_Per_Hour.toLocaleString()} BPH ({(watch.Beats_Per_Hour / 3600).toFixed(1)} Hz)</span>
               </div>
             )}
-            <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
-              <span className="text-[var(--color-text-secondary)]">Case Width:</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{watch.Case_Width}mm</span>
-            </div>
-            {watch.Case_Material && (
+            {show(displayConfig, 'Case_Width') && (
+              <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
+                <span className="text-[var(--color-text-secondary)]">Case Width:</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Case_Width}mm</span>
+              </div>
+            )}
+            {show(displayConfig, 'Case_Material') && watch.Case_Material && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Case Material:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Case_Material}</span>
               </div>
             )}
-            {watch.Lug_Width && (
+            {show(displayConfig, 'Lug_Width') && watch.Lug_Width && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Lug Width:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Lug_Width}mm</span>
               </div>
             )}
-            <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
-              <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{watch.Dial_Colour}</span>
-            </div>
-            {watch.Glass && (
+            {show(displayConfig, 'Dial_Colour') && (
+              <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
+                <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Dial_Colour}</span>
+              </div>
+            )}
+            {show(displayConfig, 'Glass') && watch.Glass && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Glass:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Glass}</span>
               </div>
             )}
-            {watch.Caseback_Window !== undefined && (
+            {show(displayConfig, 'Caseback_Window') && watch.Caseback_Window !== undefined && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Caseback Window:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Caseback_Window ? 'Yes' : 'No'}</span>
               </div>
             )}
-            <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
-              <span className="text-[var(--color-text-secondary)]">Year:</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{watch.Manufactured_Year}</span>
-            </div>
+            {show(displayConfig, 'Manufactured_Year') && (
+              <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
+                <span className="text-[var(--color-text-secondary)]">Year:</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Manufactured_Year}</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Description */}
-        {watch.Description && (
+        {show(displayConfig, 'Description') && watch.Description && (
           <div>
             <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-2" style={{ filter: 'url(#roughen)', letterSpacing: '0.03em' }}>Description</h3>
             <p className="text-[var(--color-text-primary)]" style={{ filter: 'url(#roughen)', letterSpacing: '0.03em' }}>{watch.Description}</p>
@@ -207,23 +220,25 @@ export default function MobileWatchModal({ watch, onClose }: MobileWatchModalPro
         <div>
           <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3" style={{ filter: 'url(#roughen)', letterSpacing: '0.03em' }}>Acquisition</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
-              <span className="text-[var(--color-text-secondary)]">Obtained:</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{watch.Obtained_Date}</span>
-            </div>
-            {watch.Acquired_From && (
+            {show(displayConfig, 'Obtained_Date') && (
+              <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
+                <span className="text-[var(--color-text-secondary)]">Obtained:</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{watch.Obtained_Date}</span>
+              </div>
+            )}
+            {show(displayConfig, 'Acquired_From') && watch.Acquired_From && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">From:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Acquired_From}</span>
               </div>
             )}
-            {watch.Acquired_Condition && (
+            {show(displayConfig, 'Acquired_Condition') && watch.Acquired_Condition && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Condition:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{watch.Acquired_Condition}</span>
               </div>
             )}
-            {watch.Purchase_Price && (
+            {show(displayConfig, 'Purchase_Price') && watch.Purchase_Price && (
               <div className="flex justify-between py-2 border-t border-[var(--color-text-primary)]/20">
                 <span className="text-[var(--color-text-secondary)]">Price:</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">£{watch.Purchase_Price}</span>

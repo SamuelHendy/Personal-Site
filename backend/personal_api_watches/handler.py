@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import boto3
+from boto3.dynamodb.conditions import Attr
 from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -17,9 +18,10 @@ MAX_WORKERS = 10
 
 # Fields to return for card display (lightweight)
 # Includes dates for sorting/display, but excludes heavy Description field
+# Note: Enabled is needed for the filter but won't be returned in response
 CARD_FIELDS = [
     'Brand', 'Model', 'Dial_Colour', 'Case_Width', 
-    'Movement_Type', 'Is_Favourite', 'Manufactured_Year', 'Obtained_Date'
+    'Movement_Type', 'Is_Favourite', 'Manufactured_Year', 'Obtained_Date', 'Enabled'
 ]
 
 
@@ -44,11 +46,16 @@ def lambda_handler(event, context):
         _s3 = boto3.client('s3')
     
     try:
-        # Use projection to only fetch card fields
+        # Use projection to only fetch card fields, filter to only enabled watches
         response = _table.scan(
-            ProjectionExpression=', '.join(CARD_FIELDS)
+            ProjectionExpression=', '.join(CARD_FIELDS),
+            FilterExpression=Attr('Enabled').eq(True)
         )
         items = response.get('Items', [])
+        
+        # Remove Enabled field from response (not needed by frontend)
+        for item in items:
+            item.pop('Enabled', None)
         
         # Fetch thumbnail images concurrently
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:

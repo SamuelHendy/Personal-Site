@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { X, Star } from 'lucide-react'
+import type { DisplayConfig } from '../contexts/DisplayConfigContext'
 
 interface Watch {
   Brand: string
@@ -27,9 +28,13 @@ interface WatchModalProps {
   watch: Watch
   onClose: () => void
   thumbnailRect?: DOMRect
+  displayConfig: DisplayConfig
 }
 
-export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModalProps) {
+// Helper to check if a field should be shown (defaults to false)
+const show = (config: DisplayConfig, field: keyof DisplayConfig): boolean => config[field] ?? false
+
+export default function WatchModal({ watch, onClose, thumbnailRect, displayConfig }: WatchModalProps) {
   const contentRef = useRef<HTMLDivElement>(null)
 
   // Prevent page scrolling when modal is open, but allow content scrolling
@@ -164,7 +169,7 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             </div>
 
             {/* Description */}
-            {watch.Description && (
+            {show(displayConfig, 'Description') && watch.Description && (
               <div>
                 <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-2">Description</h3>
                 <p className="text-[var(--color-text-primary)]">{watch.Description}</p>
@@ -175,34 +180,42 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             <div>
               <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3">Specifications</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
-                  <span className="font-semibold">{watch.Movement_Type}</span>
-                </div>
-                {watch.Movement_Name && (
+                {show(displayConfig, 'Movement_Type') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
+                    <span className="font-semibold">{watch.Movement_Type}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Movement_Name') && watch.Movement_Name && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">{watch.Movement_Type === 'Quartz' ? 'Module:' : 'Calibre:'}</span>
                     <span className="font-semibold">{watch.Movement_Name}</span>
                   </div>
                 )}
-                {watch.Beats_Per_Hour && (
+                {show(displayConfig, 'Beats_Per_Hour') && watch.Beats_Per_Hour && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">Frequency:</span>
                     <span className="font-semibold">{watch.Beats_Per_Hour.toLocaleString()} BPH ({(watch.Beats_Per_Hour / 3600).toFixed(1)} Hz)</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Case Width:</span>
-                  <span className="font-semibold">{watch.Case_Width}mm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
-                  <span className="font-semibold">{watch.Dial_Colour}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Year:</span>
-                  <span className="font-semibold">{watch.Manufactured_Year}</span>
-                </div>
+                {show(displayConfig, 'Case_Width') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Case Width:</span>
+                    <span className="font-semibold">{watch.Case_Width}mm</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Dial_Colour') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
+                    <span className="font-semibold">{watch.Dial_Colour}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Manufactured_Year') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Year:</span>
+                    <span className="font-semibold">{watch.Manufactured_Year}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -210,17 +223,19 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             <div>
               <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3">Acquisition</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Obtained:</span>
-                  <span className="font-semibold">{watch.Obtained_Date}</span>
-                </div>
-                {watch.Acquired_From && (
+                {show(displayConfig, 'Obtained_Date') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Obtained:</span>
+                    <span className="font-semibold">{watch.Obtained_Date}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Acquired_From') && watch.Acquired_From && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">From:</span>
                     <span className="font-semibold">{watch.Acquired_From}</span>
                   </div>
                 )}
-                {watch.Purchase_Price && (
+                {show(displayConfig, 'Purchase_Price') && watch.Purchase_Price && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">Price:</span>
                     <span className="font-semibold">£{watch.Purchase_Price}</span>
