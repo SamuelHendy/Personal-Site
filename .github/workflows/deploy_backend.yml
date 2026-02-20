@@ -28,6 +28,7 @@ jobs:
           - personal_api_watch_detail
           - personal_api_fishtank_residents
           - personal_api_fishtank_timeline
+          - personal_api_admin_watches
     
     steps:
       - name: Checkout

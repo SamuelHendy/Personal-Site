@@ -28,18 +28,25 @@ from personal_api_watches.handler import lambda_handler as watches_handler
 from personal_api_watch_detail.handler import lambda_handler as watch_detail_handler
 from personal_api_fishtank_residents.handler import lambda_handler as fishtank_residents_handler
 from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_timeline_handler
+from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
 
 app = Flask(__name__)
 CORS(app)
 
 
-def invoke_lambda(handler, path_params=None):
+def invoke_lambda(handler, path_params=None, body=None):
     """Simulate API Gateway event and invoke Lambda handler."""
     event = {
         'pathParameters': path_params or {},
         'queryStringParameters': dict(request.args) if request.args else None,
+        'requestContext': {
+            'http': {
+                'method': request.method
+            }
+        },
         'httpMethod': request.method,
         'path': request.path,
+        'body': body,
     }
     
     result = handler(event, None)
@@ -97,6 +104,19 @@ def fishtank_timeline():
     return invoke_lambda(fishtank_timeline_handler)
 
 
+# Admin routes (no auth in dev mode)
+@app.route('/admin/watches', methods=['GET', 'POST'])
+def admin_watches():
+    body = request.get_data(as_text=True) if request.method == 'POST' else None
+    return invoke_lambda(admin_watches_handler, body=body)
+
+
+@app.route('/admin/watches/<brand>/<model>', methods=['PUT', 'DELETE'])
+def admin_watch_detail(brand, model):
+    body = request.get_data(as_text=True) if request.method == 'PUT' else None
+    return invoke_lambda(admin_watches_handler, path_params={'brand': brand, 'model': model}, body=body)
+
+
 if __name__ == '__main__':
     if args.profile:
         print(f"Using AWS profile: {args.profile}")
@@ -112,5 +132,11 @@ if __name__ == '__main__':
     print("  GET /fishtank/residents?type=fish   - List fish")
     print("  GET /fishtank/residents?type=plant  - List plants")
     print("  GET /fishtank/timeline              - List timeline events")
+    print("")
+    print("Admin (no auth in dev mode):")
+    print("  GET    /admin/watches               - List all watches")
+    print("  POST   /admin/watches               - Create watch")
+    print("  PUT    /admin/watches/<brand>/<model> - Update watch")
+    print("  DELETE /admin/watches/<brand>/<model> - Delete watch")
     print("")
     app.run(debug=True, host='0.0.0.0', port=5000)
