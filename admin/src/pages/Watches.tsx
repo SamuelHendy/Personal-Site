@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings } from 'lucide-react'
+import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings, Image } from 'lucide-react'
 import { api } from '../config/api'
+import ImageManagementModal from '../components/ImageManagementModal'
 
 // Fields that can be toggled for display on the public site
 const DISPLAY_FIELDS = [
@@ -77,6 +78,10 @@ export default function Watches() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [watchToDelete, setWatchToDelete] = useState<Watch | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Image management modal state
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [imageModalWatch, setImageModalWatch] = useState<Watch | null>(null)
 
   // Display config state
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
@@ -346,7 +351,7 @@ export default function Watches() {
                       </td>
                       <td className="text-center">
                         <button 
-                          className={`btn btn-ghost btn-sm btn-square ${watch.Is_Favourite ? 'text-warning' : 'text-base-content/30'}`}
+                          className={`btn btn-ghost btn-sm btn-square border-0 ${watch.Is_Favourite ? 'text-warning' : 'text-base-content/30'}`}
                           onClick={() => handleToggleFavourite(watch)}
                         >
                           <Star className={`w-5 h-5 ${watch.Is_Favourite ? 'fill-current' : ''}`} />
@@ -354,14 +359,28 @@ export default function Watches() {
                       </td>
                       <td>
                         <div className="flex justify-end gap-1">
+                          {/* Hardcoded processing spinner - will be dynamic */}
+                          <span className="w-8 h-8 flex items-center justify-center text-info" title="Processing images...">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          </span>
                           <button 
-                            className="btn btn-ghost btn-sm btn-square"
+                            className="btn btn-ghost btn-sm btn-square border-0"
+                            onClick={() => {
+                              setImageModalWatch(watch)
+                              setIsImageModalOpen(true)
+                            }}
+                            title="Manage images"
+                          >
+                            <Image className="w-4 h-4" />
+                          </button>
+                          <button 
+                            className="btn btn-ghost btn-sm btn-square border-0"
                             onClick={() => handleEditWatch(watch)}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button 
-                            className="btn btn-ghost btn-sm btn-square text-error"
+                            className="btn btn-ghost btn-sm btn-square border-0 text-error"
                             onClick={() => handleDeleteClick(watch)}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -705,6 +724,19 @@ export default function Watches() {
           <button onClick={() => { setIsDeleteModalOpen(false); setWatchToDelete(null) }}>close</button>
         </form>
       </dialog>
+
+      {/* Image Management Modal */}
+      {imageModalWatch && (
+        <ImageManagementModal
+          isOpen={isImageModalOpen}
+          onClose={() => {
+            setIsImageModalOpen(false)
+            setImageModalWatch(null)
+          }}
+          brand={imageModalWatch.Brand}
+          model={imageModalWatch.Model}
+        />
+      )}
     </div>
   )
 }
