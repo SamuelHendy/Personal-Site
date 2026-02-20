@@ -192,6 +192,71 @@ jobs:
         env:
           VITE_API_URL: "/api"
 
+      - name: Security audit
+        working-directory: frontend
+        id: audit
+        continue-on-error: true
+        run: |
+          npm audit --json > audit-results.json 2>&1 || true
+          
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          MODERATE=$(cat audit-results.json | jq '.metadata.vulnerabilities.moderate // 0')
+          LOW=$(cat audit-results.json | jq '.metadata.vulnerabilities.low // 0')
+          
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          
+          echo "## Vulnerability Summary" > audit-summary.txt
+          echo "- Critical: $CRITICAL" >> audit-summary.txt
+          echo "- High: $HIGH" >> audit-summary.txt
+          echo "- Moderate: $MODERATE" >> audit-summary.txt
+          echo "- Low: $LOW" >> audit-summary.txt
+          
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "has_blocking=true" >> $GITHUB_OUTPUT
+            npm audit --omit=dev 2>&1 | tail -50 >> audit-summary.txt
+          else
+            echo "has_blocking=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Request changes for critical/high vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditSummary = fs.readFileSync('frontend/audit-summary.txt', 'utf8');
+            
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'REQUEST_CHANGES',
+              body: `## ⚠️ Frontend Security Vulnerabilities\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nPlease address critical and high severity vulnerabilities before merging.`
+            });
+
+      - name: Comment on moderate/low vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'false' && (steps.audit.outputs.moderate > 0 || steps.audit.outputs.low > 0)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditSummary = fs.readFileSync('frontend/audit-summary.txt', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ℹ️ Frontend Security Advisory\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are low/moderate severity - consider addressing when convenient.`
+            });
+
+      - name: Fail if critical/high vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'true'
+        run: exit 1
+
   test-backend:
     needs: check-labels
     if: needs.check-labels.outputs.deploy-backend == 'true'
@@ -296,3 +361,68 @@ jobs:
       - name: Build
         working-directory: admin
         run: npm run build
+
+      - name: Security audit
+        working-directory: admin
+        id: audit
+        continue-on-error: true
+        run: |
+          npm audit --json > audit-results.json 2>&1 || true
+          
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          MODERATE=$(cat audit-results.json | jq '.metadata.vulnerabilities.moderate // 0')
+          LOW=$(cat audit-results.json | jq '.metadata.vulnerabilities.low // 0')
+          
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          
+          echo "## Vulnerability Summary" > audit-summary.txt
+          echo "- Critical: $CRITICAL" >> audit-summary.txt
+          echo "- High: $HIGH" >> audit-summary.txt
+          echo "- Moderate: $MODERATE" >> audit-summary.txt
+          echo "- Low: $LOW" >> audit-summary.txt
+          
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "has_blocking=true" >> $GITHUB_OUTPUT
+            npm audit --omit=dev 2>&1 | tail -50 >> audit-summary.txt
+          else
+            echo "has_blocking=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Request changes for critical/high vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditSummary = fs.readFileSync('admin/audit-summary.txt', 'utf8');
+            
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'REQUEST_CHANGES',
+              body: `## ⚠️ Admin Security Vulnerabilities\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nPlease address critical and high severity vulnerabilities before merging.`
+            });
+
+      - name: Comment on moderate/low vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'false' && (steps.audit.outputs.moderate > 0 || steps.audit.outputs.low > 0)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditSummary = fs.readFileSync('admin/audit-summary.txt', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ℹ️ Admin Security Advisory\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are low/moderate severity - consider addressing when convenient.`
+            });
+
+      - name: Fail if critical/high vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'true'
+        run: exit 1
