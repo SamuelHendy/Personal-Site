@@ -7,6 +7,7 @@ import WatchModal from '../components/WatchModal'
 import MobileWatchCard from '../components/MobileWatchCard'
 import MobileWatchModal from '../components/MobileWatchModal'
 import { api } from '../config/api'
+import type { DisplayConfig } from '../contexts/DisplayConfigContext'
 
 interface Watch {
   Brand: string
@@ -55,6 +56,9 @@ export default function Watches() {
   
   // Cache for watch details (keyed by Model)
   const [watchDetailsCache, setWatchDetailsCache] = useState<Record<string, Watch>>({})
+  
+  // Display config for field visibility
+  const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
 
   // Mobile carousel state
   const [mobileCardIndex, setMobileCardIndex] = useState(0)
@@ -294,6 +298,16 @@ export default function Watches() {
         console.error('Error fetching watches:', error)
         setLoading(false)
       })
+    
+    // Fetch display config
+    fetch(api.config('display_config', 'watches'))
+      .then(res => res.json())
+      .then(data => {
+        delete data.ConfigType
+        delete data.ConfigKey
+        setDisplayConfig(data)
+      })
+      .catch(() => setDisplayConfig({}))
   }, [])
 
   // Filter watches based on selected filter and search query
@@ -692,6 +706,7 @@ export default function Watches() {
             watch={selectedWatch}
             onClose={() => setSelectedWatch(null)}
             thumbnailRect={thumbnailRect}
+            displayConfig={displayConfig}
           />
         )}
       </AnimatePresence>
@@ -702,6 +717,7 @@ export default function Watches() {
           <MobileWatchModal
             watch={mobileModalWatch}
             onClose={() => setMobileModalWatch(null)}
+            displayConfig={displayConfig}
           />
         )}
       </AnimatePresence>

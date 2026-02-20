@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Star } from 'lucide-react'
+import { X, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { DisplayConfig } from '../contexts/DisplayConfigContext'
+import { cdn, api } from '../config/api'
 
 interface Watch {
   Brand: string
@@ -21,26 +23,56 @@ interface Watch {
   Lug_Width?: number
   Acquired_Condition?: string
   Is_Favourite?: boolean
+  Thumbnail?: string
+  Images?: string[]
 }
 
 interface WatchModalProps {
   watch: Watch
   onClose: () => void
   thumbnailRect?: DOMRect
+  displayConfig: DisplayConfig
 }
 
-export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModalProps) {
-  // Lock scrolling when modal is open (block wheel events)
+// Helper to check if a field should be shown (defaults to false)
+const show = (config: DisplayConfig, field: keyof DisplayConfig): boolean => config[field] ?? false
+
+export default function WatchModal({ watch, onClose, thumbnailRect, displayConfig }: WatchModalProps) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageLoadError, setImageLoadError] = useState(false)
+  
+  const placeholderUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(watch.Brand)}`
+
+  // Prevent page scrolling when modal is open, but allow content scrolling
   useEffect(() => {
-    const blockWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    // Intercept wheel events - allow scrolling only inside content div
+    const handleWheel = (e: WheelEvent) => {
+      if (contentRef.current?.contains(e.target as Node)) {
+        // Allow scrolling inside content - don't prevent default
+        e.stopPropagation()
+      } else {
+        // Block scrolling outside content
+        e.preventDefault()
+        e.stopPropagation()
+      }
     }
-    
-    // Use capture phase and non-passive to block before it reaches the page
-    window.addEventListener('wheel', blockWheel, { capture: true, passive: false })
+
+    // Use capture phase to intercept before Watches page handler
+    window.addEventListener('wheel', handleWheel, { capture: true, passive: false })
+
     return () => {
-      window.removeEventListener('wheel', blockWheel, { capture: true })
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+      window.removeEventListener('wheel', handleWheel, { capture: true })
     }
   }, [])
 
@@ -56,10 +88,48 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
+  // Fetch full watch details including images
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch(api.watchDetail(watch.Brand, watch.Model))
+        if (res.ok) {
+          const data = await res.json()
+          if (data.Images && data.Images.length > 0) {
+            setImages(data.Images.map((img: string) => cdn.watches(img)))
+          } else if (watch.Thumbnail) {
+            setImages([cdn.watches(watch.Thumbnail)])
+          }
+        }
+      } catch {
+        // If fetch fails, try thumbnail
+        if (watch.Thumbnail) {
+          setImages([cdn.watches(watch.Thumbnail)])
+        }
+      }
+    }
+    fetchImages()
+  }, [watch.Brand, watch.Model, watch.Thumbnail])
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
+  }
+
+  const goToPreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  // Current image URL with fallback to placeholder
+  const currentImageUrl = images.length > 0 && !imageLoadError 
+    ? images[currentImageIndex] 
+    : placeholderUrl
+
   return (
     <motion.div 
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
+      onWheel={(e) => e.preventDefault()}
+      onTouchMove={(e) => e.preventDefault()}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -107,19 +177,54 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
           <img
-            src="https://placehold.co/900x1200/e5e5e5/525252?text=Watch"
-            alt="Watch"
+            src={currentImageUrl}
+            alt={`${watch.Brand} ${watch.Model}`}
             className="max-w-full max-h-full w-auto h-auto object-contain border-[12px] border-white"
+            onError={() => setImageLoadError(true)}
           />
+          
+          {/* Navigation arrows - only show if multiple images */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={goToPreviousImage}
+                className="rough-border absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 border border-[var(--color-text-primary)] bg-black/60 backdrop-blur-sm hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-white z-20"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={goToNextImage}
+                className="rough-border absolute -right-6 top-1/2 -translate-y-1/2 w-12 h-12 border border-[var(--color-text-primary)] bg-black/60 backdrop-blur-sm hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex items-center justify-center text-white z-20"
+                aria-label="Next image"
+              >
+                <ChevronRight size={24} />
+              </button>
+
+              {/* Dot indicators */}
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? 'bg-white w-6' 
+                        : 'bg-white/50 w-2'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* Right box - Content */}
         <motion.div 
-          className="relative"
+          className="relative overflow-hidden"
           style={{ width: '600px', maxWidth: '600px', maxHeight: '80vh' }}
           onClick={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -129,7 +234,7 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
           <div className="rough-border absolute inset-0 border border-[var(--color-text-primary)] bg-[var(--color-background)] pointer-events-none" />
           
           {/* Content div */}
-          <div className="relative p-8 overflow-y-auto h-full overscroll-contain text-rough">
+          <div ref={contentRef} className="relative p-8 pb-12 overflow-y-auto max-h-[80vh] overscroll-contain text-rough">
             {/* Favourite star icon */}
             {watch.Is_Favourite && (
               <div className="absolute top-4 right-4">
@@ -145,7 +250,7 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             </div>
 
             {/* Description */}
-            {watch.Description && (
+            {show(displayConfig, 'Description') && watch.Description && (
               <div>
                 <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-2">Description</h3>
                 <p className="text-[var(--color-text-primary)]">{watch.Description}</p>
@@ -156,34 +261,42 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             <div>
               <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3">Specifications</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
-                  <span className="font-semibold">{watch.Movement_Type}</span>
-                </div>
-                {watch.Movement_Name && (
+                {show(displayConfig, 'Movement_Type') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Movement Type:</span>
+                    <span className="font-semibold">{watch.Movement_Type}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Movement_Name') && watch.Movement_Name && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">{watch.Movement_Type === 'Quartz' ? 'Module:' : 'Calibre:'}</span>
                     <span className="font-semibold">{watch.Movement_Name}</span>
                   </div>
                 )}
-                {watch.Beats_Per_Hour && (
+                {show(displayConfig, 'Beats_Per_Hour') && watch.Beats_Per_Hour && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">Frequency:</span>
                     <span className="font-semibold">{watch.Beats_Per_Hour.toLocaleString()} BPH ({(watch.Beats_Per_Hour / 3600).toFixed(1)} Hz)</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Case Width:</span>
-                  <span className="font-semibold">{watch.Case_Width}mm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
-                  <span className="font-semibold">{watch.Dial_Colour}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Year:</span>
-                  <span className="font-semibold">{watch.Manufactured_Year}</span>
-                </div>
+                {show(displayConfig, 'Case_Width') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Case Width:</span>
+                    <span className="font-semibold">{watch.Case_Width}mm</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Dial_Colour') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Dial Colour:</span>
+                    <span className="font-semibold">{watch.Dial_Colour}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Manufactured_Year') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Year:</span>
+                    <span className="font-semibold">{watch.Manufactured_Year}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -191,17 +304,19 @@ export default function WatchModal({ watch, onClose, thumbnailRect }: WatchModal
             <div>
               <h3 className="text-sm font-bold uppercase text-[var(--color-text-secondary)] mb-3">Acquisition</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Obtained:</span>
-                  <span className="font-semibold">{watch.Obtained_Date}</span>
-                </div>
-                {watch.Acquired_From && (
+                {show(displayConfig, 'Obtained_Date') && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">Obtained:</span>
+                    <span className="font-semibold">{watch.Obtained_Date}</span>
+                  </div>
+                )}
+                {show(displayConfig, 'Acquired_From') && watch.Acquired_From && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">From:</span>
                     <span className="font-semibold">{watch.Acquired_From}</span>
                   </div>
                 )}
-                {watch.Purchase_Price && (
+                {show(displayConfig, 'Purchase_Price') && watch.Purchase_Price && (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">Price:</span>
                     <span className="font-semibold">£{watch.Purchase_Price}</span>

@@ -5,5 +5,7 @@ export const api = {
     watches: `${BASE_URL}/admin/watches`,
     watch: (brand: string, model: string) => `${BASE_URL}/admin/watches/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`,
     config: (configType: string, configKey: string) => `${BASE_URL}/admin/config/${encodeURIComponent(configType)}/${encodeURIComponent(configKey)}`,
+    imageUpload: `${BASE_URL}/admin/images/upload`,
+    imageStatus: (path: string) => `${BASE_URL}/admin/images/status/${path}`,
   },
 }

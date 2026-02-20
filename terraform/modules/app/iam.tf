@@ -146,3 +146,28 @@ resource "aws_iam_role_policy" "lambda_admin_dynamodb" {
     ]
   })
 }
+
+# Admin Lambda S3 access for raw bucket (presigned URLs and status checks)
+resource "aws_iam_role_policy" "lambda_admin_s3_raw" {
+  name = "personal-site-lambda-admin-s3-raw"
+  role = aws_iam_role.lambda_admin.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "RawBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::shendy-raw",
+          "arn:aws:s3:::shendy-raw/*"
+        ]
+      }
+    ]
+  })
+}
