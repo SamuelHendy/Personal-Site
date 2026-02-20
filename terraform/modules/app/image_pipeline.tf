@@ -42,6 +42,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "raw" {
     id     = "cleanup-old-raw-files"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 1
     }
@@ -141,7 +143,7 @@ resource "aws_lambda_function" "image_processor" {
 
   tags = merge(local.common_tags, {
     Name     = "personal-api-image-processor"
-    Function = "Image Processing (WebP conversion)"
+    Function = "Image Processing WebP conversion"
   })
 
   lifecycle {
