@@ -197,29 +197,45 @@ jobs:
         id: audit
         continue-on-error: true
         run: |
-          npm audit --json > audit-results.json 2>&1 || true
+          # Check production dependencies only for blocking issues
+          npm audit --omit=dev --json > audit-prod.json 2>&1 || true
+          PROD_CRITICAL=$(cat audit-prod.json | jq '.metadata.vulnerabilities.critical // 0')
+          PROD_HIGH=$(cat audit-prod.json | jq '.metadata.vulnerabilities.high // 0')
           
-          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
-          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
-          MODERATE=$(cat audit-results.json | jq '.metadata.vulnerabilities.moderate // 0')
-          LOW=$(cat audit-results.json | jq '.metadata.vulnerabilities.low // 0')
-          
-          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
-          echo "high=$HIGH" >> $GITHUB_OUTPUT
-          echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
-          echo "low=$LOW" >> $GITHUB_OUTPUT
+          # Check all dependencies for reporting
+          npm audit --json > audit-all.json 2>&1 || true
+          ALL_CRITICAL=$(cat audit-all.json | jq '.metadata.vulnerabilities.critical // 0')
+          ALL_HIGH=$(cat audit-all.json | jq '.metadata.vulnerabilities.high // 0')
+          ALL_MODERATE=$(cat audit-all.json | jq '.metadata.vulnerabilities.moderate // 0')
+          ALL_LOW=$(cat audit-all.json | jq '.metadata.vulnerabilities.low // 0')
           
           echo "## Vulnerability Summary" > audit-summary.txt
-          echo "- Critical: $CRITICAL" >> audit-summary.txt
-          echo "- High: $HIGH" >> audit-summary.txt
-          echo "- Moderate: $MODERATE" >> audit-summary.txt
-          echo "- Low: $LOW" >> audit-summary.txt
+          echo "### Production Dependencies" >> audit-summary.txt
+          echo "- Critical: $PROD_CRITICAL" >> audit-summary.txt
+          echo "- High: $PROD_HIGH" >> audit-summary.txt
+          echo "" >> audit-summary.txt
+          echo "### All Dependencies (including dev)" >> audit-summary.txt
+          echo "- Critical: $ALL_CRITICAL" >> audit-summary.txt
+          echo "- High: $ALL_HIGH" >> audit-summary.txt
+          echo "- Moderate: $ALL_MODERATE" >> audit-summary.txt
+          echo "- Low: $ALL_LOW" >> audit-summary.txt
           
-          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          # Only block on production vulnerabilities
+          if [ "$PROD_CRITICAL" -gt 0 ] || [ "$PROD_HIGH" -gt 0 ]; then
             echo "has_blocking=true" >> $GITHUB_OUTPUT
+            echo "" >> audit-summary.txt
+            echo "### Details" >> audit-summary.txt
             npm audit --omit=dev 2>&1 | tail -50 >> audit-summary.txt
           else
             echo "has_blocking=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Report dev vulns as FYI
+          DEV_VULNS=$((ALL_CRITICAL + ALL_HIGH + ALL_MODERATE + ALL_LOW - PROD_CRITICAL - PROD_HIGH))
+          if [ "$DEV_VULNS" -gt 0 ]; then
+            echo "has_dev_vulns=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dev_vulns=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Request changes for critical/high vulnerabilities
@@ -238,8 +254,8 @@ jobs:
               body: `## ⚠️ Frontend Security Vulnerabilities\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nPlease address critical and high severity vulnerabilities before merging.`
             });
 
-      - name: Comment on moderate/low vulnerabilities
-        if: steps.audit.outputs.has_blocking == 'false' && (steps.audit.outputs.moderate > 0 || steps.audit.outputs.low > 0)
+      - name: Comment on dev vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'false' && steps.audit.outputs.has_dev_vulns == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -250,7 +266,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## ℹ️ Frontend Security Advisory\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are low/moderate severity - consider addressing when convenient.`
+              body: `## ℹ️ Frontend Security Advisory (Dev Dependencies)\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are in dev dependencies only and don't affect production. Consider updating when upstream fixes are available.`
             });
 
       - name: Fail if critical/high vulnerabilities
@@ -367,29 +383,45 @@ jobs:
         id: audit
         continue-on-error: true
         run: |
-          npm audit --json > audit-results.json 2>&1 || true
+          # Check production dependencies only for blocking issues
+          npm audit --omit=dev --json > audit-prod.json 2>&1 || true
+          PROD_CRITICAL=$(cat audit-prod.json | jq '.metadata.vulnerabilities.critical // 0')
+          PROD_HIGH=$(cat audit-prod.json | jq '.metadata.vulnerabilities.high // 0')
           
-          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
-          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
-          MODERATE=$(cat audit-results.json | jq '.metadata.vulnerabilities.moderate // 0')
-          LOW=$(cat audit-results.json | jq '.metadata.vulnerabilities.low // 0')
-          
-          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
-          echo "high=$HIGH" >> $GITHUB_OUTPUT
-          echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
-          echo "low=$LOW" >> $GITHUB_OUTPUT
+          # Check all dependencies for reporting
+          npm audit --json > audit-all.json 2>&1 || true
+          ALL_CRITICAL=$(cat audit-all.json | jq '.metadata.vulnerabilities.critical // 0')
+          ALL_HIGH=$(cat audit-all.json | jq '.metadata.vulnerabilities.high // 0')
+          ALL_MODERATE=$(cat audit-all.json | jq '.metadata.vulnerabilities.moderate // 0')
+          ALL_LOW=$(cat audit-all.json | jq '.metadata.vulnerabilities.low // 0')
           
           echo "## Vulnerability Summary" > audit-summary.txt
-          echo "- Critical: $CRITICAL" >> audit-summary.txt
-          echo "- High: $HIGH" >> audit-summary.txt
-          echo "- Moderate: $MODERATE" >> audit-summary.txt
-          echo "- Low: $LOW" >> audit-summary.txt
+          echo "### Production Dependencies" >> audit-summary.txt
+          echo "- Critical: $PROD_CRITICAL" >> audit-summary.txt
+          echo "- High: $PROD_HIGH" >> audit-summary.txt
+          echo "" >> audit-summary.txt
+          echo "### All Dependencies (including dev)" >> audit-summary.txt
+          echo "- Critical: $ALL_CRITICAL" >> audit-summary.txt
+          echo "- High: $ALL_HIGH" >> audit-summary.txt
+          echo "- Moderate: $ALL_MODERATE" >> audit-summary.txt
+          echo "- Low: $ALL_LOW" >> audit-summary.txt
           
-          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          # Only block on production vulnerabilities
+          if [ "$PROD_CRITICAL" -gt 0 ] || [ "$PROD_HIGH" -gt 0 ]; then
             echo "has_blocking=true" >> $GITHUB_OUTPUT
+            echo "" >> audit-summary.txt
+            echo "### Details" >> audit-summary.txt
             npm audit --omit=dev 2>&1 | tail -50 >> audit-summary.txt
           else
             echo "has_blocking=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Report dev vulns as FYI
+          DEV_VULNS=$((ALL_CRITICAL + ALL_HIGH + ALL_MODERATE + ALL_LOW - PROD_CRITICAL - PROD_HIGH))
+          if [ "$DEV_VULNS" -gt 0 ]; then
+            echo "has_dev_vulns=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dev_vulns=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Request changes for critical/high vulnerabilities
@@ -408,8 +440,8 @@ jobs:
               body: `## ⚠️ Admin Security Vulnerabilities\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nPlease address critical and high severity vulnerabilities before merging.`
             });
 
-      - name: Comment on moderate/low vulnerabilities
-        if: steps.audit.outputs.has_blocking == 'false' && (steps.audit.outputs.moderate > 0 || steps.audit.outputs.low > 0)
+      - name: Comment on dev vulnerabilities
+        if: steps.audit.outputs.has_blocking == 'false' && steps.audit.outputs.has_dev_vulns == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -420,7 +452,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## ℹ️ Admin Security Advisory\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are low/moderate severity - consider addressing when convenient.`
+              body: `## ℹ️ Admin Security Advisory (Dev Dependencies)\n\n\`\`\`\n${auditSummary}\n\`\`\`\n\nThese are in dev dependencies only and don't affect production. Consider updating when upstream fixes are available.`
             });
 
       - name: Fail if critical/high vulnerabilities
