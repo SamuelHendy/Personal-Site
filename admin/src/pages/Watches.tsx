@@ -767,6 +767,16 @@ export default function Watches() {
           }}
           brand={imageModalWatch.Brand}
           model={imageModalWatch.Model}
+          onStatusChange={(pendingFiles) => {
+            const key = `${imageModalWatch.Brand}/${imageModalWatch.Model}`
+            setProcessingStatus(prev => {
+              if (pendingFiles.length === 0) {
+                const { [key]: _, ...rest } = prev
+                return rest
+              }
+              return { ...prev, [key]: pendingFiles }
+            })
+          }}
         />
       )}
     </div>

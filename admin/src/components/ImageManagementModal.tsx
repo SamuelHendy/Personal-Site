@@ -7,6 +7,7 @@ interface ImageManagementModalProps {
   onClose: () => void
   brand: string
   model: string
+  onStatusChange?: (pendingFiles: string[]) => void
 }
 
 interface ImageFile {
@@ -14,7 +15,7 @@ interface ImageFile {
   key: string
 }
 
-export default function ImageManagementModal({ isOpen, onClose, brand, model }: ImageManagementModalProps) {
+export default function ImageManagementModal({ isOpen, onClose, brand, model, onStatusChange }: ImageManagementModalProps) {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [pendingFiles, setPendingFiles] = useState<string[]>([])
   const [images, setImages] = useState<ImageFile[]>([])
@@ -24,6 +25,10 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
+  const onStatusChangeRef = useRef(onStatusChange)
+
+  // Keep ref updated
+  onStatusChangeRef.current = onStatusChange
 
   const path = `watches/${brand}/${model}`
 
@@ -33,8 +38,10 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
       const res = await fetch(api.admin.imageStatus(path))
       if (res.ok) {
         const data = await res.json()
-        setPendingFiles(data.pendingFiles || [])
-        return data.pendingFiles?.length > 0
+        const files = data.pendingFiles || []
+        setPendingFiles(files)
+        onStatusChangeRef.current?.(files)
+        return files.length > 0
       }
     } catch (err) {
       console.error('Failed to fetch status:', err)
@@ -75,15 +82,11 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
 
     const init = async () => {
       setLoading(true)
-      await Promise.all([fetchStatus(), fetchImages()])
+      const [hasPending] = await Promise.all([fetchStatus(), fetchImages()])
       setLoading(false)
-    }
-    init()
 
-    // Start polling if there are pending files
-    const startPolling = async () => {
-      const hasPending = await fetchStatus()
-      if (hasPending) {
+      // Start polling if there are pending files
+      if (hasPending && !pollingRef.current) {
         pollingRef.current = setInterval(async () => {
           const stillPending = await fetchStatus()
           if (!stillPending) {
@@ -94,10 +97,10 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model }: 
               pollingRef.current = null
             }
           }
-        }, 3000) // Poll every 3 seconds
+        }, 5000) // Poll every 5 seconds
       }
     }
-    startPolling()
+    init()
 
     return () => {
       if (pollingRef.current) {
