@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings, Image } from 'lucide-react'
-import { api } from '../config/api'
+import { api, fetchWithAuth } from '../config/api'
 import ImageManagementModal from '../components/ImageManagementModal'
 
 // Fields that can be toggled for display on the public site
@@ -97,7 +97,7 @@ export default function Watches() {
       watchList.map(async (watch) => {
         try {
           const path = `watches/${watch.Brand}/${watch.Model}`
-          const res = await fetch(api.admin.imageStatus(path))
+          const res = await fetchWithAuth(api.admin.imageStatus(path))
           if (res.ok) {
             const data = await res.json()
             if (data.pendingFiles && data.pendingFiles.length > 0) {
@@ -116,7 +116,7 @@ export default function Watches() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch(api.admin.watches)
+      const res = await fetchWithAuth(api.admin.watches)
       if (!res.ok) throw new Error('Failed to fetch watches')
       const data = await res.json()
       setWatches(data)
@@ -132,7 +132,7 @@ export default function Watches() {
   const fetchDisplayConfig = async () => {
     try {
       setDisplayConfigLoading(true)
-      const res = await fetch(api.admin.config('display_config', 'watches'))
+      const res = await fetchWithAuth(api.admin.config('display_config', 'watches'))
       if (!res.ok) throw new Error('Failed to fetch display config')
       const data = await res.json()
       // Extract just the field booleans (exclude ConfigType and ConfigKey)
@@ -143,7 +143,7 @@ export default function Watches() {
       if (Object.keys(data).length === 0) {
         const defaults: DisplayConfig = {}
         DISPLAY_FIELDS.forEach(({ key }) => { defaults[key] = false })
-        await fetch(api.admin.config('display_config', 'watches'), {
+        await fetchWithAuth(api.admin.config('display_config', 'watches'), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(defaults),
@@ -174,7 +174,7 @@ export default function Watches() {
     setDisplayConfig(prev => ({ ...prev, [fieldKey]: newValue }))
     
     try {
-      const res = await fetch(api.admin.config('display_config', 'watches'), {
+      const res = await fetchWithAuth(api.admin.config('display_config', 'watches'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...displayConfig, [fieldKey]: newValue }),
@@ -207,7 +207,7 @@ export default function Watches() {
     
     try {
       setIsSaving(true)
-      const res = await fetch(api.admin.watch(watchToDelete.Brand, watchToDelete.Model), {
+      const res = await fetchWithAuth(api.admin.watch(watchToDelete.Brand, watchToDelete.Model), {
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Failed to delete watch')
@@ -223,7 +223,7 @@ export default function Watches() {
 
   const handleToggleEnabled = async (watch: Watch) => {
     try {
-      const res = await fetch(api.admin.watch(watch.Brand, watch.Model), {
+      const res = await fetchWithAuth(api.admin.watch(watch.Brand, watch.Model), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Enabled: !watch.Enabled }),
@@ -241,7 +241,7 @@ export default function Watches() {
 
   const handleToggleFavourite = async (watch: Watch) => {
     try {
-      const res = await fetch(api.admin.watch(watch.Brand, watch.Model), {
+      const res = await fetchWithAuth(api.admin.watch(watch.Brand, watch.Model), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Is_Favourite: !watch.Is_Favourite }),
@@ -269,7 +269,7 @@ export default function Watches() {
       
       if (isNew) {
         // Create new
-        const res = await fetch(api.admin.watches, {
+        const res = await fetchWithAuth(api.admin.watches, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(editingWatch),
@@ -278,7 +278,7 @@ export default function Watches() {
         setWatches([...watches, editingWatch as Watch])
       } else {
         // Update existing
-        const res = await fetch(api.admin.watch(editingWatch.Brand, editingWatch.Model), {
+        const res = await fetchWithAuth(api.admin.watch(editingWatch.Brand, editingWatch.Model), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(editingWatch),
