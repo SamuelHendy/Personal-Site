@@ -83,6 +83,14 @@ resource "aws_cloudfront_function" "admin_redirect" {
   EOF
 }
 
+# OAC for admin bucket (kept for backwards compatibility, will be removed later)
+resource "aws_cloudfront_origin_access_control" "admin" {
+  name                              = "admin-ui-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 # CloudFront Function for main site SPA routing
 resource "aws_cloudfront_function" "spa_rewrite" {
   name    = "spa-path-rewrite"
