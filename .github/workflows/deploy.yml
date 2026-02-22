@@ -109,7 +109,7 @@ jobs:
       (needs.deploy-terraform.result == 'success' || needs.deploy-terraform.result == 'skipped')
     uses: ./.github/workflows/deploy_admin.yml
     with:
-      admin_bucket_name: ${{ vars.ADMIN_BUCKET_NAME }}
+      admin_bucket_name: ${{ vars.UI_BUCKET_NAME }}
       cloudfront_distribution_id: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
     secrets:
       AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}

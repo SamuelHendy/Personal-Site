@@ -115,13 +115,6 @@ resource "aws_cloudfront_distribution" "main" {
     origin_access_control_id = aws_cloudfront_origin_access_control.content.id
   }
 
-  # Admin UI S3 origin
-  origin {
-    domain_name              = aws_s3_bucket.admin_ui.bucket_regional_domain_name
-    origin_id                = "S3-Admin"
-    origin_access_control_id = aws_cloudfront_origin_access_control.admin.id
-  }
-
   # Default behavior - S3 UI
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
@@ -251,7 +244,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern           = "/admin/*"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-Admin"
+    target_origin_id       = "S3-UI"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
@@ -277,7 +270,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern           = "/admin"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-Admin"
+    target_origin_id       = "S3-UI"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
