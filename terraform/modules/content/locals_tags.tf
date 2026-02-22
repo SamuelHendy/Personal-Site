@@ -42,4 +42,9 @@ locals {
     Component = "DynamoDB"
     Content   = "Fishtank-Timeline"
   })
+
+  albums_table_tags = merge(local.common_tags, {
+    Component = "DynamoDB"
+    Content   = "Albums"
+  })
 }
