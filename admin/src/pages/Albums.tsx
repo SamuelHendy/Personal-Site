@@ -19,6 +19,14 @@ const emptyAlbum: Partial<Album> = {
   IsHidden: false,
 }
 
+// S3 folder name validation: alphanumeric, underscores, hyphens only
+const isValidS3FolderName = (name: string): boolean => {
+  if (!name || name.length === 0) return false
+  if (name.length > 63) return false // S3 key component limit
+  // Allow alphanumeric, underscores, hyphens. No spaces, special chars, or leading/trailing dots
+  return /^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/.test(name)
+}
+
 export default function Albums() {
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,6 +37,7 @@ export default function Albums() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [displayNameManuallyEdited, setDisplayNameManuallyEdited] = useState(false)
 
   const fetchAlbums = useCallback(async () => {
     try {
@@ -51,11 +60,13 @@ export default function Albums() {
 
   const handleAddAlbum = () => {
     setEditingAlbum({ ...emptyAlbum })
+    setDisplayNameManuallyEdited(false)
     setIsModalOpen(true)
   }
 
   const handleEditAlbum = (album: Album) => {
     setEditingAlbum({ ...album })
+    setDisplayNameManuallyEdited(true) // For existing albums, assume display name was set intentionally
     setIsModalOpen(true)
   }
 
@@ -264,12 +275,27 @@ export default function Albums() {
                     <label className="label"><span className="label-text">Album Name *</span></label>
                     <input 
                       type="text" 
-                      className="input input-bordered" 
+                      className={`input input-bordered ${isNewAlbum && editingAlbum.AlbumName && !isValidS3FolderName(editingAlbum.AlbumName) ? 'input-error' : ''}`}
                       value={editingAlbum.AlbumName || ''}
-                      onChange={(e) => setEditingAlbum({ ...editingAlbum, AlbumName: e.target.value })}
+                      onChange={(e) => {
+                        // Replace spaces with underscores as user types
+                        const sanitized = e.target.value.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
+                        // Auto-sync display name if not manually edited
+                        const updates: Partial<Album> = { AlbumName: sanitized }
+                        if (!displayNameManuallyEdited) {
+                          // If has underscores, create friendly display name; otherwise clear it
+                          updates.DisplayName = sanitized.includes('_') ? sanitized.replace(/_/g, ' ') : null
+                        }
+                        setEditingAlbum({ ...editingAlbum, ...updates })
+                      }}
                       disabled={!isNewAlbum}
                       placeholder="e.g., Japan_2024"
                     />
+                    {isNewAlbum && editingAlbum.AlbumName && !isValidS3FolderName(editingAlbum.AlbumName) && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">Must be 2+ characters, alphanumeric with underscores/hyphens</span>
+                      </label>
+                    )}
                   </div>
                   <div className="form-control">
                     <label className="label"><span className="label-text">Display Name</span></label>
@@ -277,7 +303,10 @@ export default function Albums() {
                       type="text" 
                       className="input input-bordered" 
                       value={editingAlbum.DisplayName || ''}
-                      onChange={(e) => setEditingAlbum({ ...editingAlbum, DisplayName: e.target.value || null })}
+                      onChange={(e) => {
+                        setDisplayNameManuallyEdited(true)
+                        setEditingAlbum({ ...editingAlbum, DisplayName: e.target.value || null })
+                      }}
                       placeholder="e.g., Japan Trip 2024"
                     />
                   </div>
@@ -353,7 +382,7 @@ export default function Albums() {
             <button 
               className="btn btn-primary"
               onClick={handleSaveAlbum}
-              disabled={isSaving || !editingAlbum?.AlbumName}
+              disabled={isSaving || !editingAlbum?.AlbumName || (!!isNewAlbum && !isValidS3FolderName(editingAlbum.AlbumName || ''))}
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {isNewAlbum ? 'Create Album' : 'Save Changes'}
