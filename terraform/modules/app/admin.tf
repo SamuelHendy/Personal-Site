@@ -39,7 +39,8 @@ resource "aws_s3_bucket_policy" "admin_ui" {
   })
 }
 
-# CloudFront Function to handle /admin routing
+# CloudFront Function to handle /admin SPA routing
+# Files are stored at /admin/ in the UI bucket, so we keep the prefix
 resource "aws_cloudfront_function" "admin_rewrite" {
   name    = "admin-path-rewrite"
   runtime = "cloudfront-js-2.0"
@@ -49,21 +50,16 @@ resource "aws_cloudfront_function" "admin_rewrite" {
       var request = event.request;
       var uri = request.uri;
       
-      // Strip /admin prefix
-      if (uri.startsWith('/admin')) {
-        uri = uri.replace(/^\/admin/, '');
+      // Handle /admin/ root
+      if (uri === '/admin' || uri === '/admin/') {
+        request.uri = '/admin/index.html';
       }
-      
-      // Handle root or empty path
-      if (uri === '' || uri === '/') {
-        uri = '/index.html';
-      }
-      // Handle SPA routing - if no file extension, serve index.html
+      // Handle SPA routing - if no file extension, serve admin index.html
       else if (!uri.includes('.')) {
-        uri = '/index.html';
+        request.uri = '/admin/index.html';
       }
+      // Otherwise serve the file as-is (e.g. /admin/assets/index.js)
       
-      request.uri = uri;
       return request;
     }
   EOF
@@ -85,14 +81,6 @@ resource "aws_cloudfront_function" "admin_redirect" {
       };
     }
   EOF
-}
-
-# OAC for admin bucket
-resource "aws_cloudfront_origin_access_control" "admin" {
-  name                              = "admin-ui-oac"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
 }
 
 # CloudFront Function for main site SPA routing
