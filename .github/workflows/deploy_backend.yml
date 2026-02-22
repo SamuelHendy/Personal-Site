@@ -31,6 +31,9 @@ jobs:
           - personal_api_admin_watches
           - personal_api_admin_config
           - personal_api_config
+          - personal_api_image_upload
+          - personal_api_image_status
+          - personal_api_image_processor
     
     steps:
       - name: Checkout
