@@ -264,6 +264,34 @@ resource "aws_lambda_function" "admin_watches" {
   }
 }
 
+# Admin Albums CRUD lambda (protected by Cognito)
+resource "aws_lambda_function" "admin_albums" {
+  function_name = "personal-api-admin-albums"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      TABLE_NAME = var.albums_table_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-admin-albums"
+    Function = "Admin Albums CRUD"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
 # Admin Config lambda (protected by Cognito)
 resource "aws_lambda_function" "admin_config" {
   function_name = "personal-api-admin-config"

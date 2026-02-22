@@ -258,6 +258,21 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold">Content Management</h2>
           
           <ContentCard
+            title="Albums"
+            description="Photo gallery"
+            icon={<Image className="w-5 h-5 text-accent" />}
+            iconBgClass="bg-accent/10"
+            pageEnabled={pageEnabled.albums ?? false}
+            status={pageEnabled.albums ? 'empty' : 'disabled'}
+            itemCount={0}
+            itemLabel="albums"
+            manageLink="/albums"
+            btnClass="btn-accent"
+            countClass="text-accent"
+            onToggle={() => handleToggle('albums')}
+          />
+
+          <ContentCard
             title="Watches"
             description="Collection page"
             icon={<Clock className="w-5 h-5 text-primary" />}
@@ -285,21 +300,6 @@ export default function Dashboard() {
             btnClass="btn-secondary"
             countClass="text-secondary"
             onToggle={() => handleToggle('fishtank')}
-          />
-
-          <ContentCard
-            title="Albums"
-            description="Photo gallery"
-            icon={<Image className="w-5 h-5 text-accent" />}
-            iconBgClass="bg-accent/10"
-            pageEnabled={pageEnabled.albums ?? false}
-            status={pageEnabled.albums ? 'empty' : 'disabled'}
-            itemCount={0}
-            itemLabel="albums"
-            manageLink="/albums"
-            btnClass="btn-accent"
-            countClass="text-accent"
-            onToggle={() => handleToggle('albums')}
           />
         </div>
       </div>

@@ -15,9 +15,9 @@ export default function AdminLayout() {
             </div>
             <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
               <li><NavLink to="/" end className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink></li>
+              <li><NavLink to="/albums" className={({ isActive }) => isActive ? 'active' : ''}>Albums</NavLink></li>
               <li><NavLink to="/watches" className={({ isActive }) => isActive ? 'active' : ''}>Watches</NavLink></li>
               <li><NavLink to="/fishtank" className={({ isActive }) => isActive ? 'active' : ''}>Fishtank</NavLink></li>
-              <li><NavLink to="/albums" className={({ isActive }) => isActive ? 'active' : ''}>Albums</NavLink></li>
             </ul>
           </div>
           <NavLink to="/" className="btn btn-ghost text-xl font-bold">Admin Panel</NavLink>
@@ -25,9 +25,9 @@ export default function AdminLayout() {
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1 gap-1">
             <li><NavLink to="/" end className={({ isActive }) => isActive ? 'active font-semibold' : ''}>Dashboard</NavLink></li>
+            <li><NavLink to="/albums" className={({ isActive }) => isActive ? 'active font-semibold' : ''}>Albums</NavLink></li>
             <li><NavLink to="/watches" className={({ isActive }) => isActive ? 'active font-semibold' : ''}>Watches</NavLink></li>
             <li><NavLink to="/fishtank" className={({ isActive }) => isActive ? 'active font-semibold' : ''}>Fishtank</NavLink></li>
-            <li><NavLink to="/albums" className={({ isActive }) => isActive ? 'active font-semibold' : ''}>Albums</NavLink></li>
           </ul>
         </div>
         <div className="navbar-end">

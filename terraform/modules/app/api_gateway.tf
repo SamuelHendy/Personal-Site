@@ -287,6 +287,56 @@ resource "aws_apigatewayv2_route" "admin_watches_delete" {
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
+# Admin Albums Lambda permission
+resource "aws_lambda_permission" "admin_albums" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_albums.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Albums integration
+resource "aws_apigatewayv2_integration" "admin_albums" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_albums.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Albums routes - all protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_albums_list" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/albums"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_albums.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_albums_create" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /api/admin/albums"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_albums.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_albums_update" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/albums/{album_name}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_albums.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_albums_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/albums/{album_name}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_albums.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
 # Admin Config Lambda permission
 resource "aws_lambda_permission" "admin_config" {
   statement_id  = "AllowAPIGateway"
