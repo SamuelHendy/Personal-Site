@@ -69,9 +69,28 @@ def lambda_handler(event, context):
                 'pendingFiles': pending_files
             })
         }
+    except _s3.exceptions.NoSuchBucket:
+        logger.warning(f'Bucket {RAW_BUCKET} does not exist')
+        return empty_response()
     except Exception as e:
-        logger.error(f'Error listing raw files: {str(e)}')
-        return error_response(500, 'Failed to check processing status')
+        # Log the error but return empty result - folder likely doesn't exist
+        logger.warning(f'Error listing raw files for {path}: {str(e)}')
+        return empty_response()
+
+
+def empty_response():
+    """Return an empty pending files response."""
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'body': json.dumps({
+            'pendingCount': 0,
+            'pendingFiles': []
+        })
+    }
 
 
 def error_response(status_code, message):

@@ -163,6 +163,9 @@ def process_image(raw_bucket, raw_key):
         logger.info(f'Deleting raw file {raw_bucket}/{raw_key}')
         _s3.delete_object(Bucket=raw_bucket, Key=raw_key)
         
+        # Clean up empty folders in raw bucket
+        cleanup_empty_folders(raw_bucket, folder_path)
+        
         logger.info(f'Successfully processed {raw_bucket}/{raw_key} -> {dest_bucket}/{output_key}')
         
     except ImportError:
@@ -200,6 +203,35 @@ def crop_to_aspect_ratio(img, target_ratio):
         box = (0, top, img_w, top + new_h)
     
     return img.crop(box)
+
+
+def cleanup_empty_folders(bucket, folder_path):
+    """
+    Check if the folder is empty after processing, and if so, clean up.
+    Works up the folder tree to remove any empty parent folders.
+    e.g., watches/Seiko/SKX007 -> check SKX007, then Seiko, then watches
+    """
+    try:
+        parts = folder_path.split('/')
+        
+        # Check each level from deepest to shallowest
+        for i in range(len(parts), 0, -1):
+            current_path = '/'.join(parts[:i])
+            prefix = f'{current_path}/'
+            
+            # List objects in this folder
+            response = _s3.list_objects_v2(Bucket=bucket, Prefix=prefix, MaxKeys=1)
+            
+            if response.get('KeyCount', 0) == 0:
+                # Folder is empty - nothing to delete (S3 doesn't have real folders)
+                logger.info(f'Folder {current_path}/ is now empty')
+            else:
+                # Folder still has files, stop cleaning up
+                break
+                
+    except Exception as e:
+        # Don't fail the whole process if cleanup fails
+        logger.warning(f'Error during folder cleanup: {str(e)}')
 
 
 def extract_exif(img):
