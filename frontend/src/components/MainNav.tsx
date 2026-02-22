@@ -118,7 +118,7 @@ export default function MainNav() {
               {/* Row 1 - 3 icons */}
               {/* LinkedIn */}
               <a 
-                href="https://linkedin.com/in/your-profile" 
+                href="https://www.linkedin.com/in/samuel-hendy-958773179/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-[#0A66C2] hover:text-white transition-colors"
@@ -138,7 +138,7 @@ export default function MainNav() {
               </a>
               {/* Instagram */}
               <a 
-                href="https://instagram.com/your-profile" 
+                href="https://instagram.com/sam.hendy_" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-gradient-to-br hover:from-[#833AB4] hover:via-[#FD1D1D] hover:to-[#F77737] hover:text-white transition-colors"
@@ -150,7 +150,7 @@ export default function MainNav() {
               {/* Row 2 - 2 icons (centered) */}
               {/* Unsplash */}
               <a 
-                href="https://unsplash.com/@your-profile" 
+                href="https://unsplash.com/@samuel_h" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-black dark:hover:bg-[#F5F5F5] hover:text-white dark:hover:text-black transition-colors col-start-1"
@@ -160,7 +160,7 @@ export default function MainNav() {
               </a>
               {/* Spotify */}
               <a 
-                href="https://open.spotify.com/user/your-profile" 
+                href="https://open.spotify.com/user/21yl4qbxlvja34wdtqyrs5zpy" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-[#1DB954] hover:text-white transition-colors col-start-2"
