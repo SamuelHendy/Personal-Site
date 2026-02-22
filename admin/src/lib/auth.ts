@@ -168,15 +168,17 @@ export function signOut(): void {
   }
 }
 
-export function getIdToken(): string | null {
+export async function getIdToken(): Promise<string | null> {
   const user = userPool.getCurrentUser()
   if (!user) return null
 
-  let token: string | null = null
-  user.getSession((err: Error | null, session: CognitoUserSession | null) => {
-    if (!err && session && session.isValid()) {
-      token = session.getIdToken().getJwtToken()
-    }
+  return new Promise((resolve) => {
+    user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+      if (!err && session && session.isValid()) {
+        resolve(session.getIdToken().getJwtToken())
+      } else {
+        resolve(null)
+      }
+    })
   })
-  return token
 }
