@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings, Image } from 'lucide-react'
 import { api } from '../config/api'
 import ImageManagementModal from '../components/ImageManagementModal'
@@ -112,10 +112,21 @@ export default function Watches() {
     setProcessingStatus(statusMap)
   }
 
-  // Fetch watches and display config on mount
-  useEffect(() => {
-    fetchWatches()
-    fetchDisplayConfig()
+  const fetchWatches = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch(api.admin.watches)
+      if (!res.ok) throw new Error('Failed to fetch watches')
+      const data = await res.json()
+      setWatches(data)
+      // Also fetch processing status for all watches
+      fetchAllProcessingStatus(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const fetchDisplayConfig = async () => {
@@ -149,6 +160,12 @@ export default function Watches() {
     }
   }
 
+  // Fetch watches and display config on mount
+  useEffect(() => {
+    fetchWatches()
+    fetchDisplayConfig()
+  }, [fetchWatches])
+
   const handleToggleDisplayField = async (fieldKey: string) => {
     const currentValue = displayConfig[fieldKey] ?? false
     const newValue = !currentValue
@@ -167,23 +184,6 @@ export default function Watches() {
       // Revert on error
       setDisplayConfig(prev => ({ ...prev, [fieldKey]: currentValue }))
       alert('Failed to update display config')
-    }
-  }
-
-  const fetchWatches = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await fetch(api.admin.watches)
-      if (!res.ok) throw new Error('Failed to fetch watches')
-      const data = await res.json()
-      setWatches(data)
-      // Also fetch processing status for all watches
-      fetchAllProcessingStatus(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -767,6 +767,17 @@ export default function Watches() {
           }}
           brand={imageModalWatch.Brand}
           model={imageModalWatch.Model}
+          onStatusChange={(pendingFiles) => {
+            const key = `${imageModalWatch.Brand}/${imageModalWatch.Model}`
+            setProcessingStatus(prev => {
+              if (pendingFiles.length === 0) {
+                const newStatus = { ...prev }
+                delete newStatus[key]
+                return newStatus
+              }
+              return { ...prev, [key]: pendingFiles }
+            })
+          }}
         />
       )}
     </div>
