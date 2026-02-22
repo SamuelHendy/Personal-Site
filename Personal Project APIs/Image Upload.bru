@@ -1,0 +1,24 @@
+meta {
+  name: Image Upload
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{domain}}/admin/images/upload
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "path": "watches/Seiko/SKX007",
+    "filename": "front_view.jpg",
+    "contentType": "image/jpeg",
+    "isThumbnail": false
+  }
+}
+
+settings {
+  encodeUrl: true
+}
