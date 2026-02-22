@@ -255,79 +255,91 @@ export default function Albums() {
           </div>
           
           {editingAlbum && (
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label"><span className="label-text">Album Name (folder name) *</span></label>
-                <input 
-                  type="text" 
-                  className="input input-bordered" 
-                  value={editingAlbum.AlbumName || ''}
-                  onChange={(e) => setEditingAlbum({ ...editingAlbum, AlbumName: e.target.value })}
-                  disabled={!isNewAlbum}
-                  placeholder="e.g., Japan_2024"
-                />
-                {isNewAlbum && (
-                  <label className="label">
-                    <span className="label-text-alt text-base-content/60">This will be the S3 folder name. Use underscores instead of spaces.</span>
-                  </label>
-                )}
-              </div>
-              
-              <div className="form-control">
-                <label className="label"><span className="label-text">Display Name</span></label>
-                <input 
-                  type="text" 
-                  className="input input-bordered" 
-                  value={editingAlbum.DisplayName || ''}
-                  onChange={(e) => setEditingAlbum({ ...editingAlbum, DisplayName: e.target.value || null })}
-                  placeholder="e.g., Japan Trip 2024"
-                />
-                <label className="label">
-                  <span className="label-text-alt text-base-content/60">Friendly name shown on the site. Leave empty to use album name.</span>
-                </label>
-              </div>
-              
-              <div className="form-control">
-                <label className="label"><span className="label-text">Description</span></label>
-                <textarea 
-                  className="textarea textarea-bordered h-24" 
-                  value={editingAlbum.Description || ''}
-                  onChange={(e) => setEditingAlbum({ ...editingAlbum, Description: e.target.value || null })}
-                  placeholder="Optional description for the album"
-                />
-              </div>
-              
-              <div className="form-control">
-                <label className="label cursor-pointer justify-start gap-3">
-                  <input 
-                    type="checkbox" 
-                    className="toggle toggle-error" 
-                    checked={editingAlbum.IsHidden ?? false}
-                    onChange={(e) => setEditingAlbum({ ...editingAlbum, IsHidden: e.target.checked })}
-                  />
-                  <span className="label-text">Hidden from public site</span>
-                </label>
-              </div>
-
-              {!isNewAlbum && (
-                <div className="bg-base-200 rounded-lg p-4 space-y-2">
-                  <h4 className="font-medium text-sm">Album Info</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-base-content/60">Images:</span>
-                      <span className="ml-2 font-medium">{editingAlbum.ImageCount ?? 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-base-content/60">Last Updated:</span>
-                      <span className="ml-2 font-medium">{editingAlbum.LastUpdated || '—'}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-base-content/60">Thumbnail:</span>
-                      <span className="ml-2 font-medium text-xs">{editingAlbum.Thumbnail || '—'}</span>
-                    </div>
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Left column - Details */}
+              <div className="lg:w-2/3 space-y-4">
+                <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide">Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label"><span className="label-text">Album Name *</span></label>
+                    <input 
+                      type="text" 
+                      className="input input-bordered" 
+                      value={editingAlbum.AlbumName || ''}
+                      onChange={(e) => setEditingAlbum({ ...editingAlbum, AlbumName: e.target.value })}
+                      disabled={!isNewAlbum}
+                      placeholder="e.g., Japan_2024"
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label"><span className="label-text">Display Name</span></label>
+                    <input 
+                      type="text" 
+                      className="input input-bordered" 
+                      value={editingAlbum.DisplayName || ''}
+                      onChange={(e) => setEditingAlbum({ ...editingAlbum, DisplayName: e.target.value || null })}
+                      placeholder="e.g., Japan Trip 2024"
+                    />
                   </div>
                 </div>
-              )}
+                {isNewAlbum && (
+                  <p className="text-xs text-base-content/60">Album name will be the S3 folder name. Use underscores instead of spaces.</p>
+                )}
+
+                <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide pt-2">Description</h4>
+                <div className="form-control">
+                  <textarea 
+                    className="textarea textarea-bordered h-32" 
+                    value={editingAlbum.Description || ''}
+                    onChange={(e) => setEditingAlbum({ ...editingAlbum, Description: e.target.value || null })}
+                    placeholder="Optional description for the album..."
+                  />
+                </div>
+              </div>
+
+              {/* Right column - Settings & Info */}
+              <div className="lg:w-1/3 space-y-4">
+                <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide">Settings</h4>
+                <div className="space-y-1">
+                  <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-3 py-1">
+                      <input 
+                        type="checkbox" 
+                        className="toggle toggle-success toggle-sm" 
+                        checked={!(editingAlbum.IsHidden ?? false)}
+                        onChange={(e) => setEditingAlbum({ ...editingAlbum, IsHidden: !e.target.checked })}
+                      />
+                      <div className="flex items-center gap-2">
+                        {!(editingAlbum.IsHidden ?? false) ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-base-content/30" />}
+                        <div>
+                          <span className="label-text">Visible</span>
+                          <p className="text-xs text-base-content/50">Show on public site</p>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {!isNewAlbum && (
+                  <>
+                    <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide pt-2">Album Info</h4>
+                    <div className="bg-base-200 rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-base-content/60">Images</span>
+                        <span className="font-medium">{editingAlbum.ImageCount ?? 0}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-base-content/60">Last Updated</span>
+                        <span className="font-medium">{editingAlbum.LastUpdated || '—'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-base-content/60">Thumbnail</span>
+                        <p className="font-medium text-xs mt-1 break-all">{editingAlbum.Thumbnail || '—'}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
           

@@ -681,9 +681,12 @@ export default function Watches() {
                         checked={editingWatch.Enabled ?? true}
                         onChange={(e) => setEditingWatch({ ...editingWatch, Enabled: e.target.checked })}
                       />
-                      <div>
-                        <span className="label-text">Enabled</span>
-                        <p className="text-xs text-base-content/50">Show on public site</p>
+                      <div className="flex items-center gap-2">
+                        {(editingWatch.Enabled ?? true) ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-base-content/30" />}
+                        <div>
+                          <span className="label-text">Visible</span>
+                          <p className="text-xs text-base-content/50">Show on public site</p>
+                        </div>
                       </div>
                     </label>
                   </div>
@@ -695,9 +698,12 @@ export default function Watches() {
                         checked={editingWatch.Is_Favourite ?? false}
                         onChange={(e) => setEditingWatch({ ...editingWatch, Is_Favourite: e.target.checked })}
                       />
-                      <div>
-                        <span className="label-text">Favourite</span>
-                        <p className="text-xs text-base-content/50">Highlight in collection</p>
+                      <div className="flex items-center gap-2">
+                        <Star className={`w-4 h-4 ${(editingWatch.Is_Favourite ?? false) ? 'text-warning fill-current' : 'text-base-content/30'}`} />
+                        <div>
+                          <span className="label-text">Favourite</span>
+                          <p className="text-xs text-base-content/50">Highlight in collection</p>
+                        </div>
                       </div>
                     </label>
                   </div>
