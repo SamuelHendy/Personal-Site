@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ImageModal from '../components/ImageModal'
 import { api, cdn } from '../config/api'
+import { usePageEnabled } from '../contexts/PageEnabledContext'
 
 export default function AlbumDetail() {
   const { albumName } = useParams<{ albumName: string }>()
@@ -13,9 +14,16 @@ export default function AlbumDetail() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+  const { pageEnabled, isLoaded } = usePageEnabled()
 
   useEffect(() => {
-    if (!albumName) return
+    if (!albumName || !isLoaded) return
+
+    // If page is disabled, don't fetch album
+    if (pageEnabled.albums === false) {
+      setLoading(false)
+      return
+    }
 
     const apiUrl = api.album(albumName)
     console.log('Fetching album:', albumName)
@@ -31,7 +39,6 @@ export default function AlbumDetail() {
       })
       .then(data => {
         console.log('Album data received:', data)
-        // API returns an array of image path strings
         setImagePaths(Array.isArray(data) ? data : [])
         setLoading(false)
       })
@@ -40,13 +47,30 @@ export default function AlbumDetail() {
         setError(error.message)
         setLoading(false)
       })
-  }, [albumName])
+  }, [albumName, isLoaded, pageEnabled.albums])
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
         <div className="flex items-center justify-center min-h-[50vh]">
           <span className="text-2xl text-[var(--color-text-secondary)]">Loading album...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (pageEnabled.albums === false) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
+        <Link to="/" className="rough-border inline-flex items-center gap-2 border border-transparent text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] transition-colors mb-8 w-fit">
+          <ChevronRight size={24} className="rotate-180 -translate-y-0.5" />
+          <span className="font-bold">Back to Home</span>
+        </Link>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4 text-printed">Coming Soon</h1>
+            <p className="text-[var(--color-text-secondary)]">The albums section is currently being prepared. Check back later!</p>
+          </div>
         </div>
       </div>
     )

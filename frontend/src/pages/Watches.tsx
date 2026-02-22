@@ -8,6 +8,7 @@ import MobileWatchCard from '../components/MobileWatchCard'
 import MobileWatchModal from '../components/MobileWatchModal'
 import { api } from '../config/api'
 import type { DisplayConfig } from '../contexts/DisplayConfigContext'
+import { usePageEnabled } from '../contexts/PageEnabledContext'
 
 interface Watch {
   Brand: string
@@ -59,6 +60,9 @@ export default function Watches() {
   
   // Display config for field visibility
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
+  
+  // Page enabled from context
+  const { pageEnabled, isLoaded: pageEnabledLoaded } = usePageEnabled()
 
   // Mobile carousel state
   const [mobileCardIndex, setMobileCardIndex] = useState(0)
@@ -261,6 +265,15 @@ export default function Watches() {
   }, [scrollPosition, watches, selectedFilter, searchQuery])
 
   useEffect(() => {
+    // Don't fetch until we know if page is enabled
+    if (!pageEnabledLoaded) return
+    
+    // If page is disabled, don't fetch watches
+    if (pageEnabled.watches === false) {
+      setLoading(false)
+      return
+    }
+
     fetch(api.watches)
       .then(response => response.json())
       .then(data => {
@@ -308,7 +321,7 @@ export default function Watches() {
         setDisplayConfig(data)
       })
       .catch(() => setDisplayConfig({}))
-  }, [])
+  }, [pageEnabledLoaded, pageEnabled.watches])
 
   // Filter watches based on selected filter and search query
   const filteredWatches = watches.filter(watch => {
@@ -380,6 +393,23 @@ export default function Watches() {
     if (currentPosition > 15) return null // Show all cards in pile with buffer for easing
     
     return currentPosition
+  }
+
+  if (pageEnabled.watches === false) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
+        <Link to="/" className="rough-border inline-flex items-center gap-2 border border-transparent text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] transition-colors mb-8 w-fit">
+          <ChevronRight size={24} className="rotate-180 -translate-y-0.5" />
+          <span className="font-bold">Back to Home</span>
+        </Link>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4 text-printed">Coming Soon</h1>
+            <p className="text-[var(--color-text-secondary)]">The watches section is currently being prepared. Check back later!</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
