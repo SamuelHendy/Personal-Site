@@ -143,7 +143,7 @@ resource "aws_cloudfront_distribution" "main" {
   # API behavior - forward to API Gateway
   ordered_cache_behavior {
     path_pattern           = "/api/*"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "API"
     viewer_protocol_policy = "redirect-to-https"
