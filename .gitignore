@@ -19,6 +19,7 @@ __pycache__/
 *.so
 venv/
 .env
+.env.*
 
 # Large image files (use webp versions instead)
 frontend/public/images/**/*.jpg
