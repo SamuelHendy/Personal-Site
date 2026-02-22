@@ -116,6 +116,7 @@ export default function Watches() {
   useEffect(() => {
     fetchWatches()
     fetchDisplayConfig()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchDisplayConfig = async () => {
@@ -771,7 +772,7 @@ export default function Watches() {
             const key = `${imageModalWatch.Brand}/${imageModalWatch.Model}`
             setProcessingStatus(prev => {
               if (pendingFiles.length === 0) {
-                const { [key]: _, ...rest } = prev
+                const { [key]: _unused, ...rest } = prev
                 return rest
               }
               return { ...prev, [key]: pendingFiles }
