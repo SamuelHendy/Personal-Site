@@ -13,7 +13,7 @@ export const api = {
 }
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getIdToken()
+  const token = await getIdToken()
   
   const headers = new Headers(options.headers)
   if (token) {
