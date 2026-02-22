@@ -1,17 +1,11 @@
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef, useState, useEffect } from 'react'
+import { useRef } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
-import { api, cdn } from '../config/api'
+import { cdn } from '../config/api'
 import type { PageEnabledConfig } from '../types/pageEnabled'
-
-interface Album {
-  name: string
-  thumbnail: string
-  img_count: number
-  last_updated: string
-}
+import { useRecentAlbums } from '../hooks/useData'
 
 interface FeatureProps {
   pageEnabled: PageEnabledConfig
@@ -24,24 +18,7 @@ export default function Feature({ pageEnabled }: FeatureProps) {
     offset: ['start end', 'end start']
   })
 
-  const [albums, setAlbums] = useState<Album[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Determine limit based on screen width (5 for 2k+, 4 for smaller)
-    const limit = window.innerWidth >= 2000 ? 5 : 4
-    
-    fetch(api.recentlyUpdated(limit))
-      .then(response => response.json())
-      .then(data => {
-        setAlbums(data)
-        setLoading(false)
-      })
-      .catch(error => {
-        console.error('Error fetching albums:', error)
-        setLoading(false)
-      })
-  }, [])
+  const { recentAlbums: albums, isLoading: loading } = useRecentAlbums()
 
   // Right image moves up and down
   const rightImageY = useTransform(scrollYProgress, [0, 1], [50, -50])

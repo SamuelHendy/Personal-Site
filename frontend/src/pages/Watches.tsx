@@ -9,40 +9,11 @@ import MobileWatchModal from '../components/MobileWatchModal'
 import { api } from '../config/api'
 import type { DisplayConfig } from '../contexts/DisplayConfigContext'
 import { usePageEnabled } from '../hooks/usePageEnabled'
-
-interface Watch {
-  Brand: string
-  Model: string
-  Dial_Colour: string
-  Case_Width: number
-  Movement_Type: string
-  Movement_Name?: string
-  Manufactured_Year: string
-  Obtained_Date: string
-  Description?: string
-  Purchase_Price?: string | number
-  Acquired_From?: string
-  Beats_Per_Hour?: number
-  Glass?: string
-  Case_Material?: string
-  Caseback_Window?: boolean
-  Lug_Width?: number
-  Acquired_Condition?: string
-  parsedDate: Date
-  Is_Favourite?: boolean
-  pull_pile: {
-    vertical: number
-    tilt: number
-  }
-  place_pile: {
-    vertical: number
-    tilt: number
-  }
-}
+import { useWatches } from '../hooks/useData'
+import type { Watch } from '../types/data'
 
 export default function Watches() {
-  const [watches, setWatches] = useState<Watch[]>([])
-  const [loading, setLoading] = useState(true)
+  const { watches, isLoading: loading } = useWatches()
   const [selectedFilter, setSelectedFilter] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [scrollPosition, setScrollPosition] = useState(0)
@@ -62,7 +33,7 @@ export default function Watches() {
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({})
   
   // Page enabled from context
-  const { pageEnabled, isLoaded: pageEnabledLoaded } = usePageEnabled()
+  const { pageEnabled } = usePageEnabled()
 
   // Mobile carousel state
   const [mobileCardIndex, setMobileCardIndex] = useState(0)
@@ -265,50 +236,6 @@ export default function Watches() {
   }, [scrollPosition, watches, selectedFilter, searchQuery])
 
   useEffect(() => {
-    // Don't fetch until we know if page is enabled
-    if (!pageEnabledLoaded) return
-    
-    // If page is disabled, don't fetch watches
-    if (pageEnabled.watches === false) return
-
-    fetch(api.watches)
-      .then(response => response.json())
-      .then(data => {
-        // Parse dates and add random pile data to each watch
-        const watchesWithDates = data.map((watch: Watch) => {
-          const [day, month, year] = watch.Obtained_Date.split('/')
-          
-          // Generate random values for pull and place piles
-          const randomVertical = () => Math.floor(Math.random() * 21) - 10 // -10 to +10
-          const randomTilt = () => Math.floor(Math.random() * 13) - 6 // -6 to +6
-          
-          return {
-            ...watch,
-            parsedDate: new Date(parseInt(year), parseInt(month) - 1, parseInt(day)),
-            pull_pile: {
-              vertical: randomVertical(),
-              tilt: randomTilt()
-            },
-            place_pile: {
-              vertical: randomVertical(),
-              tilt: randomTilt()
-            }
-          }
-        })
-        
-        // Sort by parsed date (newest first)
-        const sortedData = watchesWithDates.sort((a: Watch, b: Watch) => {
-          return b.parsedDate.valueOf() - a.parsedDate.valueOf()
-        })
-        
-        setWatches(sortedData)
-        setLoading(false)
-      })
-      .catch(error => {
-        console.error('Error fetching watches:', error)
-        setLoading(false)
-      })
-    
     // Fetch display config
     fetch(api.config('display_config', 'watches'))
       .then(res => res.json())
@@ -318,7 +245,7 @@ export default function Watches() {
         setDisplayConfig(data)
       })
       .catch(() => setDisplayConfig({}))
-  }, [pageEnabledLoaded, pageEnabled.watches])
+  }, [])
 
   // Filter watches based on selected filter and search query
   const filteredWatches = watches.filter(watch => {
