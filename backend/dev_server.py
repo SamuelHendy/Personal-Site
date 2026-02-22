@@ -31,6 +31,8 @@ from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_ti
 from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
 from personal_api_admin_config.handler import lambda_handler as admin_config_handler
 from personal_api_config.handler import lambda_handler as config_handler
+from personal_api_image_upload.handler import lambda_handler as image_upload_handler
+from personal_api_image_status.handler import lambda_handler as image_status_handler
 
 app = Flask(__name__)
 CORS(app)
@@ -130,6 +132,28 @@ def public_config(config_type, config_key):
     return invoke_lambda(config_handler, path_params={'config_type': config_type, 'config_key': config_key})
 
 
+@app.route('/admin/images/upload', methods=['POST'])
+def image_upload():
+    body = request.get_data(as_text=True)
+    return invoke_lambda(image_upload_handler, body=body)
+
+
+@app.route('/admin/images/status/<path:image_path>', methods=['GET'])
+def image_status(image_path):
+    event = {
+        'pathParameters': {'path': image_path},
+        'rawPath': f'/admin/images/status/{image_path}',
+        'queryStringParameters': dict(request.args) if request.args else None,
+        'httpMethod': request.method,
+    }
+    result = image_status_handler(event, None)
+    return app.response_class(
+        response=result.get('body', ''),
+        status=result.get('statusCode', 200),
+        mimetype='application/json'
+    )
+
+
 if __name__ == '__main__':
     if args.profile:
         print(f"Using AWS profile: {args.profile}")
@@ -153,6 +177,8 @@ if __name__ == '__main__':
     print("  DELETE /admin/watches/<brand>/<model> - Delete watch")
     print("  GET    /admin/config/<type>/<key>    - Get config")
     print("  PUT    /admin/config/<type>/<key>    - Update config")
+    print("  POST   /admin/images/upload          - Get presigned URL for upload")
+    print("  GET    /admin/images/status/<type>/<id> - Check processing status")
     print("")
     print("Public Config:")
     print("  GET    /config/<type>/<key>          - Get config (read-only)")
