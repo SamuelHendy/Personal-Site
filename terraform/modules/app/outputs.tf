@@ -39,7 +39,3 @@ output "cognito_client_id" {
   value       = aws_cognito_user_pool_client.admin.id
 }
 
-output "admin_bucket_name" {
-  description = "S3 bucket for admin UI"
-  value       = aws_s3_bucket.admin_ui.id
-}
