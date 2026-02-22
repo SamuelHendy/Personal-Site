@@ -12,6 +12,7 @@ interface DirectionAwareHoverProps {
   lastUpdated?: string;
   alwaysShowText?: boolean;
   disabled?: boolean;
+  fadeOnHover?: boolean;  // If true, uses two-image crossfade (for grayscale->color). If false, single image with position animation only.
 }
 
 export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
@@ -25,12 +26,13 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
   lastUpdated,
   alwaysShowText = false,
   disabled = false,
+  fadeOnHover = false,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [direction, setDirection] = useState<string>("left");
   const [isHovered, setIsHovered] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [overlayLoaded, setOverlayLoaded] = useState(false);
-  const [baseLoaded, setBaseLoaded] = useState(false);
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current || disabled) return;
@@ -63,50 +65,73 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
       className={`relative overflow-hidden ${className} ${disabled ? 'cursor-not-allowed' : ''}`}
     >
       <>
-        {/* Overlay image - visible when not hovered */}
-        {overlayImageUrl && (
+        {fadeOnHover ? (
+          <>
+            {/* Two-image mode: Overlay (grayscale) fades out to reveal base (color) on hover */}
+            {overlayImageUrl && (
+              <motion.img
+                src={overlayImageUrl}
+                alt=""
+                className="album-cover absolute inset-0 w-full h-full object-cover z-10"
+                style={{
+                  filter: enableGrayscale ? 'grayscale(100%)' : 'none',
+                }}
+                initial={{ opacity: 0 }}
+                animate={
+                  isHovered
+                    ? { 
+                        scale: 1.2, 
+                        x: direction === 'left' ? 15 : direction === 'right' ? -15 : 0,
+                        y: direction === 'top' ? 15 : direction === 'bottom' ? -15 : 0,
+                        opacity: 0 
+                      }
+                    : { 
+                        scale: 1.2, 
+                        x: 0, 
+                        y: 0,
+                        opacity: overlayLoaded ? 1 : 0
+                      }
+                }
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                onLoad={() => setOverlayLoaded(true)}
+              />
+            )}
+            {/* Base image - always visible underneath */}
+            <motion.img
+              src={imageUrl}
+              alt=""
+              className="album-cover absolute inset-0 w-full h-full object-cover z-0"
+              initial={{ opacity: 0 }}
+              animate={{
+                scale: 1.2, 
+                x: isHovered ? (direction === 'left' ? 15 : direction === 'right' ? -15 : 0) : 0,
+                y: isHovered ? (direction === 'top' ? 15 : direction === 'bottom' ? -15 : 0) : 0,
+                opacity: imageLoaded ? 1 : 0
+              }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </>
+        ) : (
+          /* Single image mode: Just position/scale animation, no opacity fade */
           <motion.img
-            src={overlayImageUrl}
+            src={overlayImageUrl || imageUrl}
             alt=""
             className="album-cover absolute inset-0 w-full h-full object-cover z-10"
             style={{
               filter: enableGrayscale ? 'grayscale(100%)' : 'none',
             }}
-            initial={{ opacity: 0 }}
-            animate={
-              isHovered
-                ? { 
-                    scale: 1.2, 
-                    x: direction === 'left' ? 15 : direction === 'right' ? -15 : 0,
-                    y: direction === 'top' ? 15 : direction === 'bottom' ? -15 : 0,
-                    opacity: 0 
-                  }
-                : { 
-                    scale: 1.2, 
-                    x: 0, 
-                    y: 0,
-                    opacity: overlayLoaded ? 1 : 0
-                  }
-            }
+            initial={{ opacity: 0, scale: 1.2 }}
+            animate={{
+              scale: 1.2, 
+              x: isHovered ? (direction === 'left' ? 15 : direction === 'right' ? -15 : 0) : 0,
+              y: isHovered ? (direction === 'top' ? 15 : direction === 'bottom' ? -15 : 0) : 0,
+              opacity: imageLoaded ? 1 : 0
+            }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            onLoad={() => setOverlayLoaded(true)}
+            onLoad={() => setImageLoaded(true)}
           />
         )}
-        {/* Original version - always visible underneath */}
-        <motion.img
-          src={imageUrl}
-          alt=""
-          className="album-cover absolute inset-0 w-full h-full object-cover z-0"
-          initial={{ opacity: 0 }}
-          animate={{
-            scale: 1.2, 
-            x: isHovered ? (direction === 'left' ? 15 : direction === 'right' ? -15 : 0) : 0,
-            y: isHovered ? (direction === 'top' ? 15 : direction === 'bottom' ? -15 : 0) : 0,
-            opacity: baseLoaded ? 1 : 0
-          }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          onLoad={() => setBaseLoaded(true)}
-        />
       </>
       {/* Gradient overlay */}
       {showGradient && (

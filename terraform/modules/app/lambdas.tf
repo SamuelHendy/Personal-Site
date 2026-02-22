@@ -43,7 +43,7 @@ resource "aws_lambda_function" "albums" {
 
   environment {
     variables = {
-      BUCKET_NAME = var.albums_bucket_name
+      TABLE_NAME = var.albums_table_name
     }
   }
 

@@ -6,10 +6,11 @@ import { DataContext, type Album, type Watch } from '../types/data'
 const STALE_TIME = 5 * 60 * 1000
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // Albums state
+  // Albums state (paginated)
   const [albums, setAlbums] = useState<Album[]>([])
   const [albumsLoading, setAlbumsLoading] = useState(false)
-  const [albumsLoaded, setAlbumsLoaded] = useState(false)
+  const [albumsHasMore, setAlbumsHasMore] = useState(true)
+  const albumsCursor = useRef<string | null>(null)
   const albumsFetchedAt = useRef<number>(0)
 
   // Recent Albums state
@@ -25,33 +26,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const watchesFetchedAt = useRef<number>(0)
 
   const fetchAlbums = useCallback(async () => {
-    if (albumsLoaded || albumsLoading) return
+    if (albums.length > 0 || albumsLoading) return
 
     setAlbumsLoading(true)
     try {
       const response = await fetch(api.albums)
       const data = await response.json()
       
-      // Sort by last_updated (newest first), then alphabetically
-      const sorted = data.sort((a: Album, b: Album) => {
-        const [dayA, monthA, yearA] = a.last_updated.split('/')
-        const [dayB, monthB, yearB] = b.last_updated.split('/')
-        const dateA = new Date(parseInt(yearA), parseInt(monthA) - 1, parseInt(dayA))
-        const dateB = new Date(parseInt(yearB), parseInt(monthB) - 1, parseInt(dayB))
-        const dateDiff = dateB.getTime() - dateA.getTime()
-        if (dateDiff !== 0) return dateDiff
-        return a.name.localeCompare(b.name)
-      })
-      
-      setAlbums(sorted)
-      setAlbumsLoaded(true)
+      setAlbums(data.albums || [])
+      albumsCursor.current = data.nextCursor || null
+      setAlbumsHasMore(!!data.nextCursor)
       albumsFetchedAt.current = Date.now()
     } catch (error) {
       console.error('Error fetching albums:', error)
     } finally {
       setAlbumsLoading(false)
     }
-  }, [albumsLoaded, albumsLoading])
+  }, [albums.length, albumsLoading])
+
+  const fetchMoreAlbums = useCallback(async () => {
+    if (!albumsHasMore || albumsLoading) return
+
+    setAlbumsLoading(true)
+    try {
+      const url = albumsCursor.current 
+        ? `${api.albums}?cursor=${encodeURIComponent(albumsCursor.current)}`
+        : api.albums
+      const response = await fetch(url)
+      const data = await response.json()
+      
+      setAlbums(prev => [...prev, ...(data.albums || [])])
+      albumsCursor.current = data.nextCursor || null
+      setAlbumsHasMore(!!data.nextCursor)
+    } catch (error) {
+      console.error('Error fetching more albums:', error)
+    } finally {
+      setAlbumsLoading(false)
+    }
+  }, [albumsHasMore, albumsLoading])
+
+  const resetAlbums = useCallback(() => {
+    setAlbums([])
+    albumsCursor.current = null
+    setAlbumsHasMore(true)
+    albumsFetchedAt.current = 0
+  }, [])
 
   const fetchRecentAlbums = useCallback(async () => {
     if (recentAlbumsLoaded || recentAlbumsLoading) return
@@ -113,8 +132,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const now = Date.now()
         
         // Check if albums data is stale and was previously loaded
-        if (albumsLoaded && now - albumsFetchedAt.current > STALE_TIME) {
-          setAlbumsLoaded(false)
+        if (albums.length > 0 && now - albumsFetchedAt.current > STALE_TIME) {
+          resetAlbums()
         }
         
         // Check if recent albums data is stale
@@ -131,14 +150,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [albumsLoaded, recentAlbumsLoaded, watchesLoaded])
+  }, [albums.length, recentAlbumsLoaded, watchesLoaded, resetAlbums])
 
   return (
     <DataContext.Provider value={{
       albums,
       albumsLoading,
-      albumsLoaded,
+      albumsHasMore,
       fetchAlbums,
+      fetchMoreAlbums,
+      resetAlbums,
       recentAlbums,
       recentAlbumsLoading,
       recentAlbumsLoaded,

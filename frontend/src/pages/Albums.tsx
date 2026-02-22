@@ -1,3 +1,4 @@
+import { useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import AlbumCard from '../components/AlbumCard'
@@ -6,7 +7,31 @@ import { useAlbums } from '../hooks/useData'
 
 export default function Albums() {
   const { pageEnabled } = usePageEnabled()
-  const { albums, isLoading } = useAlbums()
+  const { albums, isLoading, hasMore, fetchMore } = useAlbums()
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // Infinite scroll using Intersection Observer
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [entry] = entries
+    // Only fetch more if we already have albums (prevents initial double-fetch)
+    if (entry.isIntersecting && hasMore && !isLoading && albums.length > 0) {
+      fetchMore()
+    }
+  }, [hasMore, isLoading, fetchMore, albums.length])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0
+    })
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [handleObserver])
 
   if (pageEnabled.albums === false) {
     return (
@@ -38,11 +63,21 @@ export default function Albums() {
       </div>
       <div className="max-w-[2000px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {isLoading ? (
+        {albums.map((album) => (
+          <AlbumCard
+            key={album.name}
+            name={album.name}
+            display_name={album.display_name}
+            thumbnail={album.thumbnail}
+            img_count={album.img_count}
+            last_updated={album.last_updated}
+          />
+        ))}
+        {isLoading && (
           // Loading placeholders
-          Array.from({ length: 8 }).map((_, i) => (
+          Array.from({ length: 4 }).map((_, i) => (
             <div
-              key={i}
+              key={`loading-${i}`}
               className="rough-border aspect-square border border-[var(--color-text-primary)] bg-[var(--color-surface)] relative overflow-hidden"
             >
               <div className="absolute inset-0 flex items-center justify-center">
@@ -50,18 +85,10 @@ export default function Albums() {
               </div>
             </div>
           ))
-        ) : (
-          albums.map((album) => (
-            <AlbumCard
-              key={album.name}
-              name={album.name}
-              thumbnail={album.thumbnail}
-              img_count={album.img_count}
-              last_updated={album.last_updated}
-            />
-          ))
         )}
         </div>
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="h-4" />
       </div>
     </div>
   )

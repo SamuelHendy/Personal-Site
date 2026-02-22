@@ -71,7 +71,8 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.watches_table_name}",
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_residents_table_name}",
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_timeline_table_name}",
-          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}"
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.albums_table_name}"
         ]
       }
     ]
@@ -127,7 +128,8 @@ resource "aws_iam_role_policy" "lambda_admin_dynamodb" {
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.watches_table_name}",
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_residents_table_name}",
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_timeline_table_name}",
-          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}"
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.albums_table_name}"
         ]
       },
       {
@@ -140,7 +142,10 @@ resource "aws_iam_role_policy" "lambda_admin_dynamodb" {
         ]
         Resource = [
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.watches_table_name}",
-          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}"
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.site_config_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.albums_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_residents_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.fishtank_timeline_table_name}"
         ]
       }
     ]
