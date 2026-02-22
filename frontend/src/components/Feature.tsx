@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
 import { api, cdn } from '../config/api'
-import type { PageEnabledConfig } from '../contexts/PageEnabledContext'
+import type { PageEnabledConfig } from '../types/pageEnabled'
 
 interface Album {
   name: string

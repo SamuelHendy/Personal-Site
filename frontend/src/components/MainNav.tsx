@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Linkedin, Github, Instagram, Music, Camera, ChevronRight } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
-import type { PageEnabledConfig } from '../contexts/PageEnabledContext'
+import type { PageEnabledConfig } from '../types/pageEnabled'
 
 interface MainNavProps {
   pageEnabled: PageEnabledConfig

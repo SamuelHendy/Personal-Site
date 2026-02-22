@@ -1,21 +1,6 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { api } from '../config/api'
-
-export interface PageEnabledConfig {
-  watches?: boolean
-  fishtank?: boolean
-  albums?: boolean
-}
-
-export interface PageEnabledContextType {
-  pageEnabled: PageEnabledConfig
-  isLoaded: boolean
-}
-
-export const PageEnabledContext = createContext<PageEnabledContextType>({
-  pageEnabled: {},
-  isLoaded: false
-})
+import { PageEnabledContext, type PageEnabledConfig } from '../types/pageEnabled'
 
 export function PageEnabledProvider({ children }: { children: ReactNode }) {
   const [pageEnabled, setPageEnabled] = useState<PageEnabledConfig>({})
