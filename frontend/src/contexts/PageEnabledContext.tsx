@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useState, useEffect, type ReactNode } from 'react'
 import { api } from '../config/api'
 
 export interface PageEnabledConfig {
@@ -7,12 +7,12 @@ export interface PageEnabledConfig {
   albums?: boolean
 }
 
-interface PageEnabledContextType {
+export interface PageEnabledContextType {
   pageEnabled: PageEnabledConfig
   isLoaded: boolean
 }
 
-const PageEnabledContext = createContext<PageEnabledContextType>({
+export const PageEnabledContext = createContext<PageEnabledContextType>({
   pageEnabled: {},
   isLoaded: false
 })
@@ -42,8 +42,4 @@ export function PageEnabledProvider({ children }: { children: ReactNode }) {
       {children}
     </PageEnabledContext.Provider>
   )
-}
-
-export function usePageEnabled() {
-  return useContext(PageEnabledContext)
 }

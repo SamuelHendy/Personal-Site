@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import ResidentSection from '../components/ResidentSection'
 import TimelineSection from '../components/TimelineSection'
 import FishTankHero from '../components/FishTankHero'
-import { usePageEnabled } from '../contexts/PageEnabledContext'
+import { usePageEnabled } from '../hooks/usePageEnabled'
 
 export default function FishTank() {
   const { pageEnabled } = usePageEnabled()

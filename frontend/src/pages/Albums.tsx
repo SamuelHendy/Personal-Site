@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import AlbumCard from '../components/AlbumCard'
 import { api } from '../config/api'
-import { usePageEnabled } from '../contexts/PageEnabledContext'
+import { usePageEnabled } from '../hooks/usePageEnabled'
 
 interface Album {
   name: string
@@ -22,10 +22,7 @@ export default function Albums() {
     if (!isLoaded) return
     
     // If page is disabled, don't fetch albums
-    if (pageEnabled.albums === false) {
-      setLoading(false)
-      return
-    }
+    if (pageEnabled.albums === false) return
 
     fetch(api.albums)
       .then(response => response.json())

@@ -8,7 +8,7 @@ import MobileWatchCard from '../components/MobileWatchCard'
 import MobileWatchModal from '../components/MobileWatchModal'
 import { api } from '../config/api'
 import type { DisplayConfig } from '../contexts/DisplayConfigContext'
-import { usePageEnabled } from '../contexts/PageEnabledContext'
+import { usePageEnabled } from '../hooks/usePageEnabled'
 
 interface Watch {
   Brand: string
@@ -269,10 +269,7 @@ export default function Watches() {
     if (!pageEnabledLoaded) return
     
     // If page is disabled, don't fetch watches
-    if (pageEnabled.watches === false) {
-      setLoading(false)
-      return
-    }
+    if (pageEnabled.watches === false) return
 
     fetch(api.watches)
       .then(response => response.json())

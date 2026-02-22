@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ImageModal from '../components/ImageModal'
 import { api, cdn } from '../config/api'
-import { usePageEnabled } from '../contexts/PageEnabledContext'
+import { usePageEnabled } from '../hooks/usePageEnabled'
 
 export default function AlbumDetail() {
   const { albumName } = useParams<{ albumName: string }>()
@@ -20,10 +20,7 @@ export default function AlbumDetail() {
     if (!albumName || !isLoaded) return
 
     // If page is disabled, don't fetch album
-    if (pageEnabled.albums === false) {
-      setLoading(false)
-      return
-    }
+    if (pageEnabled.albums === false) return
 
     const apiUrl = api.album(albumName)
     console.log('Fetching album:', albumName)
@@ -49,16 +46,6 @@ export default function AlbumDetail() {
       })
   }, [albumName, isLoaded, pageEnabled.albums])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <span className="text-2xl text-[var(--color-text-secondary)]">Loading album...</span>
-        </div>
-      </div>
-    )
-  }
-
   if (pageEnabled.albums === false) {
     return (
       <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
@@ -71,6 +58,16 @@ export default function AlbumDetail() {
             <h1 className="text-3xl font-bold mb-4 text-printed">Coming Soon</h1>
             <p className="text-[var(--color-text-secondary)]">The albums section is currently being prepared. Check back later!</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)]">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <span className="text-2xl text-[var(--color-text-secondary)]">Loading album...</span>
         </div>
       </div>
     )
