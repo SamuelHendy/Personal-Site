@@ -143,7 +143,7 @@ resource "aws_cloudfront_distribution" "main" {
   # Admin API behavior - allows all methods for admin routes
   ordered_cache_behavior {
     path_pattern           = "/api/admin/*"
-    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"]
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "API"
     viewer_protocol_policy = "redirect-to-https"
