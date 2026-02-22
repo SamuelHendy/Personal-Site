@@ -33,7 +33,3 @@ output "cognito_client_id" {
   value       = module.app.cognito_client_id
 }
 
-output "admin_bucket_name" {
-  description = "S3 bucket for admin UI"
-  value       = module.app.admin_bucket_name
-}
