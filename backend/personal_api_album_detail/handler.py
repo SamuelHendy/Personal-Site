@@ -58,7 +58,7 @@ def lambda_handler(event, context):
 
 
 def get_album_images(album_name):
-    """Get images for a specific album."""
+    """Get images for a specific album, sorted alphabetically (EXIF date prefix handles ordering)."""
     response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f'{album_name}/')
     
     file_names = []
@@ -67,6 +67,10 @@ def get_album_images(album_name):
         if not key.endswith('/') and 'thumbnail' not in key.lower():
             if 'hidden' not in key.split('/'):
                 file_names.append(key)
+    
+    # Sort alphabetically - files with YYYY-MM-DD prefix will sort by date
+    file_names.sort(reverse=True)  # Newest first (Z > A, 2024 > 2023)
+    
     return file_names
 
 

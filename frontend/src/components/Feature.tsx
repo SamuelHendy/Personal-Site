@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { DirectionAwareHover } from './ui/direction-aware-hover'
 import { api, cdn } from '../config/api'
+import type { PageEnabledConfig } from '../types/pageEnabled'
 
 interface Album {
   name: string
@@ -12,7 +13,11 @@ interface Album {
   last_updated: string
 }
 
-export default function Feature() {
+interface FeatureProps {
+  pageEnabled: PageEnabledConfig
+}
+
+export default function Feature({ pageEnabled }: FeatureProps) {
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -76,8 +81,9 @@ export default function Feature() {
             albums.map((album) => (
               <Link
                 key={album.name}
-                to={`/albums/${album.name}`}
-                className="w-full md:max-w-[250px] block"
+                to={pageEnabled.albums === false ? '#' : `/albums/${album.name}`}
+                onClick={pageEnabled.albums === false ? (e) => e.preventDefault() : undefined}
+                className={`w-full md:max-w-[250px] block ${pageEnabled.albums === false ? 'cursor-not-allowed' : ''}`}
               >
                 {/* Border div with rough effect */}
                 <div className="rough-border border border-[var(--color-text-primary)] p-2 aspect-square"></div>
@@ -88,6 +94,7 @@ export default function Feature() {
                     overlayImageUrl={cdn.albums(album.thumbnail)}
                     className="aspect-square"
                     enableGrayscale={true}
+                    disabled={pageEnabled.albums === false}
                   >
                     <p className="text-sm font-bold text-rough">{album.name.replace(/_/g, ' ')}</p>
                     <p className="text-xs opacity-80 text-rough">{album.img_count} photos</p>
@@ -116,9 +123,8 @@ export default function Feature() {
           <div className="w-full md:w-[60%] ml-0 md:-ml-[35%]">
             <div className="flex items-center gap-[var(--spacing-md)] relative z-10">
               {/* Card - Landscape, overlapping 1/3 into photo */}
-              <Link
-                to="/fishtank"
-                className="flex-1 rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] hover:bg-[var(--color-surface)] min-h-[200px] md:min-h-[250px] flex flex-col md:flex-row md:max-w-[66vw] transition-colors"
+              <div
+                className="flex-1 rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] min-h-[200px] md:min-h-[250px] flex flex-col md:flex-row md:max-w-[66vw]"
               >
                 <div className="flex-1 p-[var(--spacing-md)] md:p-[var(--spacing-xl)] flex flex-col justify-center">
                   <h3 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-[var(--spacing-sm)] md:mb-[var(--spacing-md)] text-printed">
@@ -135,18 +141,28 @@ export default function Feature() {
                     className="bg-image w-full h-full object-cover"
                   />
                 </div>
-              </Link>
+              </div>
 
               {/* Right Button - Desktop only, narrow, matches card height */}
               <motion.div style={{ x: buttonX, willChange: 'transform' }} className="hidden md:block self-stretch -z-10">
-                <Link
-                  to="/fishtank"
-                  className="rough-border h-full w-16 border border-[var(--color-text-primary)] bg-[var(--color-background)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex flex-col items-center justify-center gap-3"
-                  aria-label="View fish tank project"
-                >
-                  <span className="text-base font-bold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Explore</span>
-                  <ChevronRight size={24} />
-                </Link>
+                {pageEnabled.fishtank ? (
+                  <Link
+                    to="/fishtank"
+                    className="rough-border h-full w-16 border border-[var(--color-text-primary)] bg-[var(--color-background)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors flex flex-col items-center justify-center gap-3"
+                    aria-label="View fish tank project"
+                  >
+                    <span className="text-base font-bold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Explore</span>
+                    <ChevronRight size={24} />
+                  </Link>
+                ) : (
+                  <div
+                    className="rough-border h-full w-16 border border-[var(--color-text-primary)] bg-[var(--color-background)] opacity-40 cursor-not-allowed flex flex-col items-center justify-center gap-3"
+                    aria-label="View fish tank project"
+                  >
+                    <span className="text-base font-bold line-through" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Explore</span>
+                    <ChevronRight size={24} />
+                  </div>
+                )}
               </motion.div>
             </div>
           </div>

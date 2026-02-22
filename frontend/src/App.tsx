@@ -7,6 +7,7 @@ import Watches from './pages/Watches'
 import FishTank from './pages/FishTank'
 import NotFound from './pages/NotFound'
 import ScrollToTop from './components/ScrollToTop'
+import { PageEnabledProvider } from './contexts/PageEnabledContext'
 
 function App() {
   useEffect(() => {
@@ -26,19 +27,21 @@ function App() {
   }, [])
 
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen bg-black">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/albums" element={<Albums />} />
-          <Route path="/albums/:albumName" element={<AlbumDetail />} />
-          <Route path="/watches" element={<Watches />} />
-          <Route path="/fishtank" element={<FishTank />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-    </Router>
+    <PageEnabledProvider>
+      <Router>
+        <ScrollToTop />
+        <div className="min-h-screen bg-black">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/albums" element={<Albums />} />
+            <Route path="/albums/:albumName" element={<AlbumDetail />} />
+            <Route path="/watches" element={<Watches />} />
+            <Route path="/fishtank" element={<FishTank />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </Router>
+    </PageEnabledProvider>
   )
 }
 

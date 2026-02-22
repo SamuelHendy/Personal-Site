@@ -209,13 +209,17 @@ resource "aws_iam_role_policy" "lambda_image_processor_s3" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "ReadRawBucket"
+        Sid    = "RawBucketAccess"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:ListBucket"
         ]
-        Resource = "${aws_s3_bucket.raw.arn}/*"
+        Resource = [
+          aws_s3_bucket.raw.arn,
+          "${aws_s3_bucket.raw.arn}/*"
+        ]
       },
       {
         Sid    = "WriteDestinationBuckets"

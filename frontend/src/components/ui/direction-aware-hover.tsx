@@ -11,6 +11,7 @@ interface DirectionAwareHoverProps {
   showLastUpdated?: boolean;
   lastUpdated?: string;
   alwaysShowText?: boolean;
+  disabled?: boolean;
 }
 
 export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
@@ -23,6 +24,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
   showLastUpdated = false,
   lastUpdated,
   alwaysShowText = false,
+  disabled = false,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [direction, setDirection] = useState<string>("left");
@@ -31,7 +33,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
   const [baseLoaded, setBaseLoaded] = useState(false);
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
+    if (!ref.current || disabled) return;
     const dir = getDirection(event, ref.current);
     setDirection(dir);
     setIsHovered(true);
@@ -58,7 +60,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
       ref={ref}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`relative overflow-hidden ${className}`}
+      className={`relative overflow-hidden ${className} ${disabled ? 'cursor-not-allowed' : ''}`}
     >
       <>
         {/* Overlay image - visible when not hovered */}

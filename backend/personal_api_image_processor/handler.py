@@ -132,7 +132,12 @@ def process_image(raw_bucket, raw_key):
         else:
             # Keep original name (without extension), add .webp
             name_without_ext = os.path.splitext(filename)[0]
-            output_filename = f'{name_without_ext}.webp'
+            # Prefix with EXIF date if available (for sorting)
+            date_prefix = get_exif_date_prefix(exif_data)
+            if date_prefix:
+                output_filename = f'{date_prefix}_{name_without_ext}.webp'
+            else:
+                output_filename = f'{name_without_ext}.webp'
         
         # Build output key - remove the path prefix since dest bucket is type-specific
         # e.g., watches/Seiko/SKX007/file.jpg -> Seiko/SKX007/file.webp
@@ -232,6 +237,32 @@ def cleanup_empty_folders(bucket, folder_path):
     except Exception as e:
         # Don't fail the whole process if cleanup fails
         logger.warning(f'Error during folder cleanup: {str(e)}')
+
+
+def get_exif_date_prefix(exif_data):
+    """
+    Extract datetime from EXIF data and format as YYYY-MM-DD_HHMMSS for filename prefix.
+    Returns None if no date found.
+    """
+    if not exif_data:
+        return None
+    
+    # Try DateTimeOriginal first (when photo was taken), then DateTime
+    date_str = exif_data.get('DateTimeOriginal') or exif_data.get('DateTime')
+    
+    if not date_str:
+        return None
+    
+    try:
+        # EXIF date format is typically "YYYY:MM:DD HH:MM:SS"
+        parts = date_str.split(' ')
+        date_part = parts[0].replace(':', '-')  # YYYY-MM-DD
+        if len(parts) > 1:
+            time_part = parts[1].replace(':', '')  # HHMMSS
+            return f'{date_part}_{time_part}'
+        return date_part
+    except Exception:
+        return None
 
 
 def extract_exif(img):
