@@ -52,6 +52,20 @@ resource "aws_dynamodb_table" "fishtank_timeline" {
   tags = local.fishtank_timeline_table_tags
 }
 
+# Albums table - metadata for photo albums
+resource "aws_dynamodb_table" "albums" {
+  name         = "albums"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "AlbumName"
+
+  attribute {
+    name = "AlbumName"
+    type = "S"
+  }
+
+  tags = local.albums_table_tags
+}
+
 # Site config table - stores display_config, page toggles, etc.
 resource "aws_dynamodb_table" "site_config" {
   name         = "site-config"

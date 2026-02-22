@@ -83,3 +83,13 @@ output "site_config_table_arn" {
   description = "Site config DynamoDB table ARN"
   value       = aws_dynamodb_table.site_config.arn
 }
+
+output "albums_table_name" {
+  description = "Albums DynamoDB table name"
+  value       = aws_dynamodb_table.albums.name
+}
+
+output "albums_table_arn" {
+  description = "Albums DynamoDB table ARN"
+  value       = aws_dynamodb_table.albums.arn
+}

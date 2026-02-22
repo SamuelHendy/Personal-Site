@@ -76,6 +76,16 @@ variable "site_config_table_name" {
   type        = string
 }
 
+variable "albums_table_name" {
+  description = "Albums DynamoDB table name"
+  type        = string
+}
+
+variable "albums_table_arn" {
+  description = "Albums DynamoDB table ARN"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Custom domain name for CloudFront (e.g., samhendy.com)"
   type        = string

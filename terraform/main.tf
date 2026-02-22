@@ -81,4 +81,6 @@ module "app" {
   fishtank_residents_table_name = module.content.fishtank_residents_table_name
   fishtank_timeline_table_name  = module.content.fishtank_timeline_table_name
   site_config_table_name        = module.content.site_config_table_name
+  albums_table_name             = module.content.albums_table_name
+  albums_table_arn              = module.content.albums_table_arn
 }
