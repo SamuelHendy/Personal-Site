@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, Fish, Image, TrendingUp, Users, Eye, AlertTriangle, Gauge, BarChart3, Check, X, Minus, Power } from 'lucide-react'
-import { api } from '../config/api'
+import { api, fetchWithAuth } from '../config/api'
 
 type ContentStatus = 'active' | 'partial' | 'empty' | 'disabled'
 
@@ -99,13 +99,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Fetch watch count
-    fetch(api.admin.watches)
+    fetchWithAuth(api.admin.watches)
       .then(res => res.json())
       .then(data => setWatchCount(Array.isArray(data) ? data.length : 0))
       .catch(() => setWatchCount(0))
 
     // Fetch page enabled config (auto-create if empty)
-    fetch(api.admin.config('page_enabled', 'root'))
+    fetchWithAuth(api.admin.config('page_enabled', 'root'))
       .then(res => res.json())
       .then(data => {
         delete data.ConfigType
@@ -113,7 +113,7 @@ export default function Dashboard() {
         // If empty, create default record with all pages disabled
         if (Object.keys(data).length === 0) {
           const defaults: PageEnabledConfig = { watches: false, fishtank: false, albums: false }
-          fetch(api.admin.config('page_enabled', 'root'), {
+          fetchWithAuth(api.admin.config('page_enabled', 'root'), {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(defaults),
@@ -134,7 +134,7 @@ export default function Dashboard() {
     setPageEnabled(prev => ({ ...prev, [page]: newValue }))
 
     try {
-      const res = await fetch(api.admin.config('page_enabled', 'root'), {
+      const res = await fetchWithAuth(api.admin.config('page_enabled', 'root'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...pageEnabled, [page]: newValue }),

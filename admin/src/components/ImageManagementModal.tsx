@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, Upload, Trash2, Image, List, Grid, Loader2 } from 'lucide-react'
-import { api } from '../config/api'
+import { api, fetchWithAuth } from '../config/api'
 
 interface ImageManagementModalProps {
   isOpen: boolean
@@ -35,7 +35,7 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model, on
   // Fetch processing status
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(api.admin.imageStatus(path))
+      const res = await fetchWithAuth(api.admin.imageStatus(path))
       if (res.ok) {
         const data = await res.json()
         const files = data.pendingFiles || []
@@ -118,7 +118,7 @@ export default function ImageManagementModal({ isOpen, onClose, brand, model, on
     try {
       for (const file of Array.from(files)) {
         // Get presigned URL
-        const res = await fetch(api.admin.imageUpload, {
+        const res = await fetchWithAuth(api.admin.imageUpload, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
