@@ -137,6 +137,11 @@ resource "aws_cloudfront_distribution" "main" {
       }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_rewrite.arn
+    }
+
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
@@ -291,19 +296,6 @@ resource "aws_cloudfront_distribution" "main" {
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
-  }
-
-  # SPA routing - return index.html for 404s
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
   }
 
   restrictions {
