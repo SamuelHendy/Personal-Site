@@ -58,7 +58,7 @@ jobs:
       - name: Deploy to S3
         working-directory: frontend
         run: |
-          aws s3 sync dist/ s3://${{ inputs.ui_bucket_name }}/ --delete
+          aws s3 sync dist/ s3://${{ inputs.ui_bucket_name }}/ --delete --exclude "admin/*"
 
       - name: Invalidate CloudFront Cache
         run: |
