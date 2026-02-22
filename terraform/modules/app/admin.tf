@@ -94,3 +94,27 @@ resource "aws_cloudfront_origin_access_control" "admin" {
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
 }
+
+# CloudFront Function for main site SPA routing
+resource "aws_cloudfront_function" "spa_rewrite" {
+  name    = "spa-path-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      
+      // Handle root
+      if (uri === '/') {
+        request.uri = '/index.html';
+      }
+      // Handle SPA routing - if no file extension, serve index.html
+      else if (!uri.includes('.')) {
+        request.uri = '/index.html';
+      }
+      
+      return request;
+    }
+  EOF
+}
