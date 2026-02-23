@@ -3,6 +3,17 @@ import { Plus, Image, Pencil, Trash2, X, Loader2, Eye, EyeOff } from 'lucide-rea
 import { api, fetchWithAuth } from '../config/api'
 import AlbumImageManagementModal from '../components/AlbumImageManagementModal'
 
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr || dateStr === 'n/a') return '—'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
+
 interface Album {
   AlbumName: string
   DisplayName?: string | null
@@ -221,7 +232,7 @@ export default function Albums() {
                       <td className="font-medium">{album.AlbumName}</td>
                       <td className="text-base-content/70">{album.DisplayName || '—'}</td>
                       <td className="text-center">{album.ImageCount ?? 0}</td>
-                      <td className="text-center text-sm">{album.LastUpdated || '—'}</td>
+                      <td className="text-center text-sm">{formatDate(album.LastUpdated)}</td>
                       <td>
                         <div className="flex justify-end gap-1">
                           {/* Processing spinner - shows when album has pending files */}

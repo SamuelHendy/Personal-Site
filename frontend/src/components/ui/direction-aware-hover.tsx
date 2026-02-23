@@ -1,6 +1,16 @@
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 
+function formatDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
 interface DirectionAwareHoverProps {
   imageUrl: string;
   overlayImageUrl?: string;
@@ -149,7 +159,7 @@ export const DirectionAwareHover: React.FC<DirectionAwareHoverProps> = ({
           <div className="text-white drop-shadow-lg text-xs md:text-sm">
             {children}
             {showLastUpdated && lastUpdated && (
-              <p className="text-xs opacity-70 mt-1 text-rough">Last Updated: {lastUpdated}</p>
+              <p className="text-xs opacity-70 mt-1 text-rough">Last Updated: {formatDate(lastUpdated)}</p>
             )}
           </div>
         </motion.div>
