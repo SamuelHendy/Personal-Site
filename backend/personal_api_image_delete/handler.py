@@ -7,8 +7,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 _s3 = None
+_dynamodb = None
 
 AWS_REGION = os.environ.get('AWS_REGION', 'eu-west-2')
+ALBUMS_TABLE = os.environ.get('ALBUMS_TABLE', 'albums')
 
 # Map path prefix to destination bucket
 DESTINATION_BUCKETS = {
@@ -96,6 +98,10 @@ def lambda_handler(event, context):
         except Exception:
             pass  # EXIF file may not exist, that's fine
         
+        # Update album ImageCount if this is an album image (not thumbnail)
+        if content_type == 'albums' and not is_thumbnail:
+            update_album_image_count(s3_key)
+        
         return {
             'statusCode': 200,
             'headers': {
@@ -108,6 +114,42 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f'Error deleting image: {str(e)}')
         return error_response(500, f'Failed to delete image: {str(e)}')
+
+
+def update_album_image_count(s3_key):
+    """Update album ImageCount in DynamoDB after deleting an image."""
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+    
+    try:
+        # Extract album name from s3_key (e.g., "My_Album/image.webp" -> "My_Album")
+        album_name = s3_key.split('/')[0]
+        
+        # Count remaining images in the album (excluding thumbnails and JSON sidecars)
+        albums_bucket = DESTINATION_BUCKETS['albums']
+        response = _s3.list_objects_v2(Bucket=albums_bucket, Prefix=f'{album_name}/')
+        
+        image_count = 0
+        for item in response.get('Contents', []):
+            key = item['Key']
+            if key.endswith('/') or 'thumbnail' in key.lower():
+                continue
+            if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                image_count += 1
+        
+        # Update DynamoDB
+        table = _dynamodb.Table(ALBUMS_TABLE)
+        table.update_item(
+            Key={'AlbumName': album_name},
+            UpdateExpression='SET ImageCount = :count',
+            ExpressionAttributeValues={':count': image_count}
+        )
+        
+        logger.info(f'Updated album {album_name} ImageCount to {image_count}')
+        
+    except Exception as e:
+        logger.warning(f'Error updating album image count: {str(e)}')
 
 
 def error_response(status_code, message):
