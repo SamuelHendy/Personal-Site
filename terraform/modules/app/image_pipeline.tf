@@ -345,6 +345,7 @@ resource "aws_lambda_function" "image_delete" {
       WATCHES_BUCKET  = var.watches_bucket_name
       ALBUMS_BUCKET   = var.albums_bucket_name
       FISHTANK_BUCKET = var.fishtank_bucket_name
+      ALBUMS_TABLE    = var.albums_table_name
     }
   }
 
