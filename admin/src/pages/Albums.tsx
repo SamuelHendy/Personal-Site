@@ -216,7 +216,7 @@ export default function Albums() {
                     </td>
                   </tr>
                 ) : (
-                  albums.map((album) => (
+                  [...albums].sort((a, b) => a.AlbumName.localeCompare(b.AlbumName)).map((album) => (
                     <tr key={album.AlbumName} className={album.IsHidden ? 'opacity-50' : ''}>
                       <td className="font-medium">{album.AlbumName}</td>
                       <td className="text-base-content/70">{album.DisplayName || '—'}</td>
