@@ -324,3 +324,62 @@ resource "aws_apigatewayv2_route" "image_status" {
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
+
+# ===========================================
+# Image Delete Lambda
+# ===========================================
+
+resource "aws_lambda_function" "image_delete" {
+  function_name = "personal-api-image-delete"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      WATCHES_BUCKET  = var.watches_bucket_name
+      ALBUMS_BUCKET   = var.albums_bucket_name
+      FISHTANK_BUCKET = var.fishtank_bucket_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-image-delete"
+    Function = "Image Deletion"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Image Delete Lambda permission
+resource "aws_lambda_permission" "image_delete" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.image_delete.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Image Delete integration
+resource "aws_apigatewayv2_integration" "image_delete" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.image_delete.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Image Delete route (protected by Cognito)
+resource "aws_apigatewayv2_route" "image_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/images/delete"
+  target             = "integrations/${aws_apigatewayv2_integration.image_delete.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}

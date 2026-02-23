@@ -26,6 +26,7 @@ export const api = {
     config: (configType: string, configKey: string) => `${BASE_URL}/admin/config/${encodeURIComponent(configType)}/${encodeURIComponent(configKey)}`,
     imageUpload: `${BASE_URL}/admin/images/upload`,
     imageStatus: (path: string) => `${BASE_URL}/admin/images/status/${path}`,
+    imageDelete: `${BASE_URL}/admin/images/delete`,
   },
 }
 

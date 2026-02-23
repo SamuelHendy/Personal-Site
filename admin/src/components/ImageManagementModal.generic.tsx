@@ -208,6 +208,33 @@ export default function ImageManagementModal({
     e.preventDefault()
   }
 
+  // Handle image deletion
+  const handleDelete = async (imageKey: string) => {
+    if (!confirm('Are you sure you want to delete this image?')) return
+    
+    try {
+      // The key needs to include the content type prefix for the API
+      const fullKey = `${contentType}/${imageKey}`
+      
+      const res = await fetchWithAuth(api.admin.imageDelete, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: fullKey })
+      })
+      
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to delete image')
+      }
+      
+      // Remove from local state
+      setImages(prev => prev.filter(img => img.key !== imageKey))
+    } catch (err) {
+      console.error('Delete failed:', err)
+      alert(err instanceof Error ? err.message : 'Delete failed')
+    }
+  }
+
   const processingCount = pendingFiles.length
   const thumbnailExists = thumbnail !== null
   
@@ -348,7 +375,10 @@ export default function ImageManagementModal({
                                       />
                                       <span className="font-mono text-sm truncate">{image.name}</span>
                                     </div>
-                                    <button className="btn btn-ghost btn-xs btn-square text-error flex-shrink-0">
+                                    <button 
+                                      className="btn btn-ghost btn-xs btn-square text-error flex-shrink-0"
+                                      onClick={() => handleDelete(image.key)}
+                                    >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
@@ -375,7 +405,10 @@ export default function ImageManagementModal({
                           alt={image.name}
                           className="w-full h-full object-cover"
                         />
-                        <button className="absolute top-1 right-1 btn btn-xs btn-square btn-error opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          className="absolute top-1 right-1 btn btn-xs btn-square btn-error opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDelete(image.key)}
+                        >
                           <Trash2 className="w-3 h-3" />
                         </button>
                         <span className="absolute bottom-1 left-1 right-1 text-xs font-mono bg-black/50 text-white px-1 rounded truncate">

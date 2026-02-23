@@ -62,7 +62,7 @@ export default function Albums() {
         </div>
       </div>
       <div className="max-w-[2000px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
         {albums.map((album) => (
           <AlbumCard
             key={album.name}
