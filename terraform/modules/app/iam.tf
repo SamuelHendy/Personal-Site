@@ -176,3 +176,28 @@ resource "aws_iam_role_policy" "lambda_admin_s3_raw" {
     ]
   })
 }
+
+# Admin Lambda S3 access for content buckets (image deletion)
+resource "aws_iam_role_policy" "lambda_admin_s3_content" {
+  name = "personal-site-lambda-admin-s3-content"
+  role = aws_iam_role.lambda_admin.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ContentBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:DeleteObject",
+          "s3:GetObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.watches_bucket_name}/*",
+          "arn:aws:s3:::${var.albums_bucket_name}/*",
+          "arn:aws:s3:::${var.fishtank_bucket_name}/*"
+        ]
+      }
+    ]
+  })
+}
