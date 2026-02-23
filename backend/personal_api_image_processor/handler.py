@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 import boto3
 from io import BytesIO
 from PIL import Image
@@ -10,9 +11,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 _s3 = None
+_dynamodb = None
 
 # Raw bucket (source) and destination buckets
 RAW_BUCKET = os.environ.get('RAW_BUCKET', 'shendy-raw')
+ALBUMS_TABLE = os.environ.get('ALBUMS_TABLE', 'albums')
 
 # Map path prefix to destination bucket
 DESTINATION_BUCKETS = {
@@ -171,6 +174,11 @@ def process_image(raw_bucket, raw_key):
         # Clean up empty folders in raw bucket
         cleanup_empty_folders(raw_bucket, folder_path)
         
+        # Update album metadata in DynamoDB if this is an album image
+        if path_prefix == 'albums' and not is_thumbnail:
+            album_name = parts[1]  # albums/{album_name}/...
+            update_album_metadata(album_name, dest_bucket)
+        
         logger.info(f'Successfully processed {raw_bucket}/{raw_key} -> {dest_bucket}/{output_key}')
         
     except ImportError:
@@ -298,6 +306,46 @@ def extract_exif(img):
     except Exception as e:
         logger.warning(f'Error extracting EXIF: {str(e)}')
         return None
+
+
+def update_album_metadata(album_name, albums_bucket):
+    """
+    Update album ImageCount and LastUpdated in DynamoDB after processing an image.
+    Counts all non-thumbnail images in the album folder.
+    """
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'eu-west-2'))
+    
+    try:
+        # Count images in the album (excluding thumbnails)
+        response = _s3.list_objects_v2(Bucket=albums_bucket, Prefix=f'{album_name}/')
+        
+        image_count = 0
+        for item in response.get('Contents', []):
+            key = item['Key']
+            if not key.endswith('/') and 'thumbnail' not in key.lower():
+                if key.endswith('.webp') or key.endswith('.jpg') or key.endswith('.png'):
+                    image_count += 1
+        
+        # Update DynamoDB
+        table = _dynamodb.Table(ALBUMS_TABLE)
+        now = datetime.utcnow().strftime('%Y-%m-%d')
+        
+        table.update_item(
+            Key={'AlbumName': album_name},
+            UpdateExpression='SET ImageCount = :count, LastUpdated = :updated',
+            ExpressionAttributeValues={
+                ':count': image_count,
+                ':updated': now
+            }
+        )
+        
+        logger.info(f'Updated album {album_name}: ImageCount={image_count}, LastUpdated={now}')
+        
+    except Exception as e:
+        # Don't fail the whole process if metadata update fails
+        logger.warning(f'Error updating album metadata: {str(e)}')
 
 
 if __name__ == '__main__':

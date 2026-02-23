@@ -138,6 +138,7 @@ resource "aws_lambda_function" "image_processor" {
       WATCHES_BUCKET  = var.watches_bucket_name
       ALBUMS_BUCKET   = var.albums_bucket_name
       FISHTANK_BUCKET = var.fishtank_bucket_name
+      ALBUMS_TABLE    = var.albums_table_name
     }
   }
 
@@ -222,6 +223,16 @@ resource "aws_iam_role_policy" "lambda_image_processor_s3" {
         ]
       },
       {
+        Sid    = "ReadDestinationBuckets"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.albums_bucket_name}"
+        ]
+      },
+      {
         Sid    = "WriteDestinationBuckets"
         Effect = "Allow"
         Action = [
@@ -231,6 +242,27 @@ resource "aws_iam_role_policy" "lambda_image_processor_s3" {
           "arn:aws:s3:::${var.watches_bucket_name}/*",
           "arn:aws:s3:::${var.albums_bucket_name}/*",
           "arn:aws:s3:::${var.fishtank_bucket_name}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_image_processor_dynamodb" {
+  name = "personal-site-lambda-image-processor-dynamodb"
+  role = aws_iam_role.lambda_image_processor.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "UpdateAlbumMetadata"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.albums_table_name}"
         ]
       }
     ]
