@@ -15,7 +15,7 @@ export default function AlbumCard({ name, display_name, thumbnail, img_count, la
   const imageUrl = cdn.albums(thumbnail)
   
   return (
-    <Link to={`/albums/${name}`} className="block max-w-[400px] w-full">
+    <Link to={`/albums/${name}`} className="block w-full max-w-[400px]">
       <div className="hover:bg-[var(--color-surface)] transition-colors cursor-pointer">
         {/* Border div with rough effect */}
         <div className="rough-border border border-[var(--color-text-primary)] p-2 aspect-square"></div>
