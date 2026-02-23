@@ -363,7 +363,7 @@ export default function Watches() {
                     </td>
                   </tr>
                 ) : (
-                  watches.map((watch) => (
+                  [...watches].sort((a, b) => `${a.Brand} ${a.Model}`.localeCompare(`${b.Brand} ${b.Model}`)).map((watch) => (
                     <tr key={`${watch.Brand}-${watch.Model}`} className={!(watch.Enabled ?? false) ? 'opacity-50' : ''}>
                       <td className="font-medium">{watch.Brand}</td>
                       <td>{watch.Model}</td>

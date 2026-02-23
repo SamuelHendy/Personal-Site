@@ -7,8 +7,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 _s3 = None
+_dynamodb = None
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME', 'shendy-albums')
+TABLE_NAME = os.environ.get('TABLE_NAME', 'albums')
 
 
 def lambda_handler(event, context):
@@ -21,9 +23,11 @@ def lambda_handler(event, context):
     - include_thumbnail: if 'true', returns { Thumbnail, Images } object
                          otherwise returns just the images array (default, for backward compat)
     """
-    global _s3
+    global _s3, _dynamodb
     if _s3 is None:
         _s3 = boto3.client('s3')
+    if _dynamodb is None:
+        _dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'eu-west-2'))
     
     path_params = event.get('pathParameters') or {}
     album_name = path_params.get('album_name')
@@ -42,6 +46,20 @@ def lambda_handler(event, context):
         }
     
     try:
+        # Check if album exists and is not hidden
+        table = _dynamodb.Table(TABLE_NAME)
+        album_record = table.get_item(Key={'AlbumName': album_name}).get('Item')
+        
+        if not album_record or album_record.get('IsHidden', False):
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Album not found'})
+            }
+        
         result = get_album_images(album_name, include_thumbnail)
         
         return {
@@ -84,11 +102,14 @@ def get_album_images(album_name, include_thumbnail=False):
         if 'hidden' in key.split('/'):
             continue
             
+        # Only include image files, not JSON sidecars
+        if not key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+            continue
+            
         # Check if this is a thumbnail
         if 'thumbnail' in key.lower():
             thumbnail = key
-        # Only include image files, not JSON sidecars
-        elif key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+        else:
             images.append(key)
     
     # Sort alphabetically - files with YYYY-MM-DD prefix will sort by date
