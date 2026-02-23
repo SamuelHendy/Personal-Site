@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Image, Pencil, Trash2, X, Loader2, Eye, EyeOff } from 'lucide-react'
 import { api, fetchWithAuth } from '../config/api'
+import AlbumImageManagementModal from '../components/AlbumImageManagementModal'
 
 interface Album {
   AlbumName: string
@@ -38,6 +39,9 @@ export default function Albums() {
   const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [displayNameManuallyEdited, setDisplayNameManuallyEdited] = useState(false)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [imageModalAlbum, setImageModalAlbum] = useState<Album | null>(null)
+  const [processingStatus, setProcessingStatus] = useState<Record<string, string[]>>({})
 
   const fetchAlbums = useCallback(async () => {
     try {
@@ -220,12 +224,31 @@ export default function Albums() {
                       <td className="text-center text-sm">{album.LastUpdated || '—'}</td>
                       <td>
                         <div className="flex justify-end gap-1">
+                          {/* Processing spinner - shows when album has pending files */}
+                          {processingStatus[album.AlbumName]?.length > 0 && (
+                            <span 
+                              className="w-8 h-8 flex items-center justify-center text-info tooltip tooltip-left before:whitespace-pre-line before:text-left" 
+                              data-tip={processingStatus[album.AlbumName].map(f => `• ${f}`).join('\n')}
+                            >
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            </span>
+                          )}
                           <button 
                             className={`btn btn-ghost btn-sm btn-square border-0 ${album.IsHidden ? 'text-base-content/30' : 'text-success'}`}
                             onClick={() => handleToggleHidden(album)}
                             title={album.IsHidden ? 'Hidden - click to show' : 'Visible - click to hide'}
                           >
                             {album.IsHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                          <button 
+                            className="btn btn-ghost btn-sm btn-square border-0"
+                            onClick={() => {
+                              setImageModalAlbum(album)
+                              setIsImageModalOpen(true)
+                            }}
+                            title="Manage images"
+                          >
+                            <Image className="w-4 h-4" />
                           </button>
                           <button 
                             className="btn btn-ghost btn-sm btn-square border-0"
@@ -424,6 +447,25 @@ export default function Albums() {
           <button onClick={() => { setIsDeleteModalOpen(false); setAlbumToDelete(null) }}>close</button>
         </form>
       </dialog>
+
+      {/* Image Management Modal */}
+      {imageModalAlbum && (
+        <AlbumImageManagementModal
+          isOpen={isImageModalOpen}
+          onClose={() => {
+            setIsImageModalOpen(false)
+            setImageModalAlbum(null)
+            fetchAlbums() // Refresh to get updated image counts
+          }}
+          albumName={imageModalAlbum.AlbumName}
+          onStatusChange={(pendingFiles) => {
+            setProcessingStatus(prev => ({
+              ...prev,
+              [imageModalAlbum.AlbumName]: pendingFiles
+            }))
+          }}
+        />
+      )}
     </div>
   )
 }
