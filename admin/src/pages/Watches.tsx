@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings, Image } from 'lucide-react'
+import { Plus, Clock, Pencil, Trash2, Star, X, Loader2, Settings, Image, Eye, EyeOff } from 'lucide-react'
 import { api, fetchWithAuth } from '../config/api'
 import ImageManagementModal from '../components/ImageManagementModal'
 
@@ -328,7 +328,6 @@ export default function Watches() {
                 <tr className="bg-base-200">
                   <th>Brand</th>
                   <th>Model</th>
-                  <th className="text-center">Enabled</th>
                   <th className="text-center">Favourite</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -336,7 +335,7 @@ export default function Watches() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={4}>
                       <div className="flex flex-col items-center justify-center py-12 text-base-content/60">
                         <Loader2 className="w-12 h-12 mb-4 animate-spin opacity-50" />
                         <p className="font-medium">Loading watches...</p>
@@ -345,7 +344,7 @@ export default function Watches() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={4}>
                       <div className="flex flex-col items-center justify-center py-12 text-error">
                         <p className="font-medium">Error loading watches</p>
                         <p className="text-sm">{error}</p>
@@ -355,7 +354,7 @@ export default function Watches() {
                   </tr>
                 ) : watches.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={4}>
                       <div className="flex flex-col items-center justify-center py-12 text-base-content/60">
                         <Clock className="w-12 h-12 mb-4 opacity-50" />
                         <p className="font-medium">No watches yet</p>
@@ -368,14 +367,6 @@ export default function Watches() {
                     <tr key={`${watch.Brand}-${watch.Model}`} className={!(watch.Enabled ?? false) ? 'opacity-50' : ''}>
                       <td className="font-medium">{watch.Brand}</td>
                       <td>{watch.Model}</td>
-                      <td className="text-center">
-                        <input 
-                          type="checkbox" 
-                          className="toggle toggle-success toggle-sm" 
-                          checked={watch.Enabled ?? false}
-                          onChange={() => handleToggleEnabled(watch)}
-                        />
-                      </td>
                       <td className="text-center">
                         <button 
                           className={`btn btn-ghost btn-sm btn-square border-0 ${watch.Is_Favourite ? 'text-warning' : 'text-base-content/30'}`}
@@ -395,6 +386,13 @@ export default function Watches() {
                               <Loader2 className="w-4 h-4 animate-spin" />
                             </span>
                           )}
+                          <button 
+                            className={`btn btn-ghost btn-sm btn-square border-0 ${(watch.Enabled ?? false) ? 'text-success' : 'text-base-content/30'}`}
+                            onClick={() => handleToggleEnabled(watch)}
+                            title={(watch.Enabled ?? false) ? 'Enabled - click to disable' : 'Disabled - click to enable'}
+                          >
+                            {(watch.Enabled ?? false) ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </button>
                           <button 
                             className="btn btn-ghost btn-sm btn-square border-0"
                             onClick={() => {
@@ -683,9 +681,12 @@ export default function Watches() {
                         checked={editingWatch.Enabled ?? true}
                         onChange={(e) => setEditingWatch({ ...editingWatch, Enabled: e.target.checked })}
                       />
-                      <div>
-                        <span className="label-text">Enabled</span>
-                        <p className="text-xs text-base-content/50">Show on public site</p>
+                      <div className="flex items-center gap-2">
+                        {(editingWatch.Enabled ?? true) ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-base-content/30" />}
+                        <div>
+                          <span className="label-text">Visible</span>
+                          <p className="text-xs text-base-content/50">Show on public site</p>
+                        </div>
                       </div>
                     </label>
                   </div>
@@ -697,9 +698,12 @@ export default function Watches() {
                         checked={editingWatch.Is_Favourite ?? false}
                         onChange={(e) => setEditingWatch({ ...editingWatch, Is_Favourite: e.target.checked })}
                       />
-                      <div>
-                        <span className="label-text">Favourite</span>
-                        <p className="text-xs text-base-content/50">Highlight in collection</p>
+                      <div className="flex items-center gap-2">
+                        <Star className={`w-4 h-4 ${(editingWatch.Is_Favourite ?? false) ? 'text-warning fill-current' : 'text-base-content/30'}`} />
+                        <div>
+                          <span className="label-text">Favourite</span>
+                          <p className="text-xs text-base-content/50">Highlight in collection</p>
+                        </div>
                       </div>
                     </label>
                   </div>

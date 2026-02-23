@@ -5,7 +5,7 @@ export function useAlbums() {
   const context = useContext(DataContext)
   
   useEffect(() => {
-    if (!context.albumsLoaded && !context.albumsLoading) {
+    if (context.albums.length === 0 && !context.albumsLoading) {
       context.fetchAlbums()
     }
   }, [context])
@@ -13,7 +13,8 @@ export function useAlbums() {
   return {
     albums: context.albums,
     isLoading: context.albumsLoading,
-    isLoaded: context.albumsLoaded
+    hasMore: context.albumsHasMore,
+    fetchMore: context.fetchMoreAlbums
   }
 }
 

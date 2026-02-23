@@ -71,9 +71,10 @@ export default function Feature({ pageEnabled }: FeatureProps) {
                     overlayImageUrl={cdn.albums(album.thumbnail)}
                     className="aspect-square"
                     enableGrayscale={true}
+                    fadeOnHover={true}
                     disabled={pageEnabled.albums === false}
                   >
-                    <p className="text-sm font-bold text-rough">{album.name.replace(/_/g, ' ')}</p>
+                    <p className="text-sm font-bold text-rough">{(album.display_name || album.name)}</p>
                     <p className="text-xs opacity-80 text-rough">{album.img_count} photos</p>
                   </DirectionAwareHover>
                 </div>

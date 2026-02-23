@@ -82,7 +82,7 @@ def lambda_handler(event, context):
 
 
 def fetch_images(resident_type, resident_id):
-    """Fetch images for a resident from S3 folder."""
+    """Fetch images for a resident from S3 folder (excluding JSON sidecars)."""
     try:
         prefix = f'{resident_type}/{resident_id}/'
         response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
@@ -90,7 +90,10 @@ def fetch_images(resident_type, resident_id):
         images = []
         for item in response.get('Contents', []):
             key = item['Key']
-            if not key.endswith('/') and 'thumbnail' not in key.lower():
+            if key.endswith('/') or 'thumbnail' in key.lower():
+                continue
+            # Only include image files, not JSON sidecars
+            if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
                 images.append(key)
         return images
     except Exception as e:

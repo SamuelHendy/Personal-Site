@@ -29,6 +29,7 @@ from personal_api_watch_detail.handler import lambda_handler as watch_detail_han
 from personal_api_fishtank_residents.handler import lambda_handler as fishtank_residents_handler
 from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_timeline_handler
 from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
+from personal_api_admin_albums.handler import lambda_handler as admin_albums_handler
 from personal_api_admin_config.handler import lambda_handler as admin_config_handler
 from personal_api_config.handler import lambda_handler as config_handler
 from personal_api_image_upload.handler import lambda_handler as image_upload_handler
@@ -121,6 +122,18 @@ def admin_watch_detail(brand, model):
     return invoke_lambda(admin_watches_handler, path_params={'brand': brand, 'model': model}, body=body)
 
 
+@app.route('/admin/albums', methods=['GET', 'POST'])
+def admin_albums():
+    body = request.get_data(as_text=True) if request.method == 'POST' else None
+    return invoke_lambda(admin_albums_handler, body=body)
+
+
+@app.route('/admin/albums/<album_name>', methods=['PUT', 'DELETE'])
+def admin_album_detail(album_name):
+    body = request.get_data(as_text=True) if request.method == 'PUT' else None
+    return invoke_lambda(admin_albums_handler, path_params={'album_name': album_name}, body=body)
+
+
 @app.route('/admin/config/<config_type>/<config_key>', methods=['GET', 'PUT'])
 def admin_config(config_type, config_key):
     body = request.get_data(as_text=True) if request.method == 'PUT' else None
@@ -175,6 +188,10 @@ if __name__ == '__main__':
     print("  POST   /admin/watches               - Create watch")
     print("  PUT    /admin/watches/<brand>/<model> - Update watch")
     print("  DELETE /admin/watches/<brand>/<model> - Delete watch")
+    print("  GET    /admin/albums                - List all albums")
+    print("  POST   /admin/albums                - Create album")
+    print("  PUT    /admin/albums/<album_name>   - Update album")
+    print("  DELETE /admin/albums/<album_name>   - Delete album")
     print("  GET    /admin/config/<type>/<key>    - Get config")
     print("  PUT    /admin/config/<type>/<key>    - Update config")
     print("  POST   /admin/images/upload          - Get presigned URL for upload")

@@ -2,6 +2,7 @@ import { createContext } from 'react'
 
 export interface Album {
   name: string
+  display_name?: string | null
   thumbnail: string
   img_count: number
   last_updated: string
@@ -32,11 +33,13 @@ export interface Watch {
 }
 
 export interface DataContextType {
-  // Albums
+  // Albums (paginated)
   albums: Album[]
   albumsLoading: boolean
-  albumsLoaded: boolean
+  albumsHasMore: boolean
   fetchAlbums: () => Promise<void>
+  fetchMoreAlbums: () => Promise<void>
+  resetAlbums: () => void
   
   // Recent Albums
   recentAlbums: Album[]
@@ -54,8 +57,10 @@ export interface DataContextType {
 export const DataContext = createContext<DataContextType>({
   albums: [],
   albumsLoading: false,
-  albumsLoaded: false,
+  albumsHasMore: true,
   fetchAlbums: async () => {},
+  fetchMoreAlbums: async () => {},
+  resetAlbums: () => {},
   
   recentAlbums: [],
   recentAlbumsLoading: false,

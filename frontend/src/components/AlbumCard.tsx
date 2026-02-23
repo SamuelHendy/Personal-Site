@@ -4,13 +4,14 @@ import { cdn } from '../config/api'
 
 interface AlbumCardProps {
   name: string
+  display_name?: string | null
   thumbnail: string
   img_count: number
   last_updated?: string
   onClick?: () => void
 }
 
-export default function AlbumCard({ name, thumbnail, img_count, last_updated }: AlbumCardProps) {
+export default function AlbumCard({ name, display_name, thumbnail, img_count, last_updated }: AlbumCardProps) {
   const imageUrl = cdn.albums(thumbnail)
   
   return (
@@ -29,7 +30,7 @@ export default function AlbumCard({ name, thumbnail, img_count, last_updated }: 
             lastUpdated={last_updated}
             alwaysShowText={true}
           >
-            <p className="text-sm font-bold text-rough">{name.replace(/_/g, ' ')}</p>
+            <p className="text-sm font-bold text-rough">{(display_name || name)}</p>
             <p className="text-xs opacity-80 text-rough">{img_count} photos</p>
           </DirectionAwareHover>
         </div>

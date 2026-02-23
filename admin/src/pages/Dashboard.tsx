@@ -95,6 +95,7 @@ interface PageEnabledConfig {
 
 export default function Dashboard() {
   const [watchCount, setWatchCount] = useState<number | null>(null)
+  const [albumCount, setAlbumCount] = useState<number | null>(null)
   const [pageEnabled, setPageEnabled] = useState<PageEnabledConfig>({})
 
   useEffect(() => {
@@ -103,6 +104,12 @@ export default function Dashboard() {
       .then(res => res.json())
       .then(data => setWatchCount(Array.isArray(data) ? data.length : 0))
       .catch(() => setWatchCount(0))
+
+    // Fetch album count
+    fetchWithAuth(api.admin.albums)
+      .then(res => res.json())
+      .then(data => setAlbumCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => setAlbumCount(0))
 
     // Fetch page enabled config (auto-create if empty)
     fetchWithAuth(api.admin.config('page_enabled', 'root'))
@@ -258,6 +265,21 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold">Content Management</h2>
           
           <ContentCard
+            title="Albums"
+            description="Photo gallery"
+            icon={<Image className="w-5 h-5 text-accent" />}
+            iconBgClass="bg-accent/10"
+            pageEnabled={pageEnabled.albums ?? false}
+            status={pageEnabled.albums ? (albumCount ? 'active' : 'empty') : 'disabled'}
+            itemCount={albumCount ?? 0}
+            itemLabel="albums"
+            manageLink="/albums"
+            btnClass="btn-accent"
+            countClass="text-accent"
+            onToggle={() => handleToggle('albums')}
+          />
+
+          <ContentCard
             title="Watches"
             description="Collection page"
             icon={<Clock className="w-5 h-5 text-primary" />}
@@ -285,21 +307,6 @@ export default function Dashboard() {
             btnClass="btn-secondary"
             countClass="text-secondary"
             onToggle={() => handleToggle('fishtank')}
-          />
-
-          <ContentCard
-            title="Albums"
-            description="Photo gallery"
-            icon={<Image className="w-5 h-5 text-accent" />}
-            iconBgClass="bg-accent/10"
-            pageEnabled={pageEnabled.albums ?? false}
-            status={pageEnabled.albums ? 'empty' : 'disabled'}
-            itemCount={0}
-            itemLabel="albums"
-            manageLink="/albums"
-            btnClass="btn-accent"
-            countClass="text-accent"
-            onToggle={() => handleToggle('albums')}
           />
         </div>
       </div>
