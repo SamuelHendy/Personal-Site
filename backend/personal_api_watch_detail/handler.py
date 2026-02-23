@@ -99,7 +99,7 @@ def lambda_handler(event, context):
 
 
 def fetch_images(brand, model):
-    """Fetch all images for a watch from S3 (excluding thumbnails)."""
+    """Fetch all images for a watch from S3 (excluding thumbnails and JSON sidecars)."""
     try:
         prefix = f'{brand}/{model}/'
         response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
@@ -107,7 +107,10 @@ def fetch_images(brand, model):
         images = []
         for item in response.get('Contents', []):
             key = item['Key']
-            if not key.endswith('/') and 'thumbnail' not in key.lower():
+            if key.endswith('/') or 'thumbnail' in key.lower():
+                continue
+            # Only include image files, not JSON sidecars
+            if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
                 images.append(key)
         return images
     except Exception as e:

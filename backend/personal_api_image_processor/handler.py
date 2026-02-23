@@ -175,8 +175,9 @@ def process_image(raw_bucket, raw_key):
         cleanup_empty_folders(raw_bucket, folder_path)
         
         # Update album metadata in DynamoDB if this is an album image
-        if path_prefix == 'albums' and not is_thumbnail:
+        if path_prefix == 'albums':
             album_name = parts[1]  # albums/{album_name}/...
+            logger.info(f'Updating album metadata for {album_name} (is_thumbnail={is_thumbnail})')
             update_album_metadata(album_name, dest_bucket)
         
         logger.info(f'Successfully processed {raw_bucket}/{raw_key} -> {dest_bucket}/{output_key}')
@@ -318,20 +319,26 @@ def update_album_metadata(album_name, albums_bucket):
         _dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'eu-west-2'))
     
     try:
-        # Count images in the album (excluding thumbnails)
+        # Count images in the album (excluding thumbnails and JSON sidecars)
+        logger.info(f'Listing objects in {albums_bucket}/{album_name}/')
         response = _s3.list_objects_v2(Bucket=albums_bucket, Prefix=f'{album_name}/')
         
         image_count = 0
         for item in response.get('Contents', []):
             key = item['Key']
-            if not key.endswith('/') and 'thumbnail' not in key.lower():
-                if key.endswith('.webp') or key.endswith('.jpg') or key.endswith('.png'):
-                    image_count += 1
+            if key.endswith('/') or 'thumbnail' in key.lower():
+                continue
+            if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                image_count += 1
+                logger.info(f'Counting image: {key}')
+        
+        logger.info(f'Total image count for {album_name}: {image_count}')
         
         # Update DynamoDB
         table = _dynamodb.Table(ALBUMS_TABLE)
         now = datetime.utcnow().strftime('%Y-%m-%d')
         
+        logger.info(f'Updating DynamoDB table {ALBUMS_TABLE} for album {album_name}')
         table.update_item(
             Key={'AlbumName': album_name},
             UpdateExpression='SET ImageCount = :count, LastUpdated = :updated',
@@ -341,7 +348,7 @@ def update_album_metadata(album_name, albums_bucket):
             }
         )
         
-        logger.info(f'Updated album {album_name}: ImageCount={image_count}, LastUpdated={now}')
+        logger.info(f'Successfully updated album {album_name}: ImageCount={image_count}, LastUpdated={now}')
         
     except Exception as e:
         # Don't fail the whole process if metadata update fails

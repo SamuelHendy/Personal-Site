@@ -111,10 +111,11 @@ def fetch_album_details(album_name):
         if any('/hidden/' in img['Key'] for img in images):
             return None
         
-        # Count images (exclude thumbnails and hidden)
+        # Count images (exclude thumbnails, hidden, and JSON sidecars)
         img_count = len([i for i in images 
                         if 'thumbnail' not in i['Key'].lower() 
-                        and 'hidden' not in i['Key'].split('/')])
+                        and 'hidden' not in i['Key'].split('/')
+                        and i['Key'].endswith(('.webp', '.jpg', '.jpeg', '.png'))])
         
         thumbnail = ''
         last_updated = 'n/a'
