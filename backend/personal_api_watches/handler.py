@@ -89,20 +89,23 @@ def lambda_handler(event, context):
 
 
 def fetch_thumbnail(brand, model):
-    """Fetch thumbnail image for a watch from S3."""
+    """Fetch thumbnail image for a watch from S3 (excluding JSON sidecars)."""
     try:
         prefix = f'{brand}/{model}/'
         response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
         
+        # First pass: look for thumbnail image
         for item in response.get('Contents', []):
             key = item['Key']
+            if not key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                continue
             if 'thumbnail' in key.lower():
                 return key
         
-        # If no thumbnail, return first image
+        # If no thumbnail, return first image (excluding JSON)
         for item in response.get('Contents', []):
             key = item['Key']
-            if not key.endswith('/'):
+            if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
                 return key
         return None
     except Exception as e:

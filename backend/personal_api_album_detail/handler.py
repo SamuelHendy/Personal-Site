@@ -84,11 +84,14 @@ def get_album_images(album_name, include_thumbnail=False):
         if 'hidden' in key.split('/'):
             continue
             
+        # Only include image files, not JSON sidecars
+        if not key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+            continue
+            
         # Check if this is a thumbnail
         if 'thumbnail' in key.lower():
             thumbnail = key
-        # Only include image files, not JSON sidecars
-        elif key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+        else:
             images.append(key)
     
     # Sort alphabetically - files with YYYY-MM-DD prefix will sort by date

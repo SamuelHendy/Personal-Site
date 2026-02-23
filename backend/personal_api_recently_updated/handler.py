@@ -40,7 +40,7 @@ def lambda_handler(event, context):
         albums_with_dates = []
         for album in albums:
             if album['last_updated'] != 'n/a':
-                album['_date'] = datetime.strptime(album['last_updated'], '%d/%m/%Y')
+                album['_date'] = datetime.strptime(album['last_updated'], '%Y-%m-%d')
                 albums_with_dates.append(album)
         
         albums_with_dates.sort(key=lambda x: x['_date'], reverse=True)
@@ -123,11 +123,13 @@ def fetch_album_details(album_name):
         if images:
             last_updated = images[0]['LastModified']
             for image in images:
-                if 'thumbnail' in image['Key'].lower():
-                    thumbnail = image['Key']
+                key = image['Key']
+                # Only consider image files for thumbnail (not JSON sidecars)
+                if 'thumbnail' in key.lower() and key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                    thumbnail = key
                 if image['LastModified'] > last_updated:
                     last_updated = image['LastModified']
-            last_updated = last_updated.strftime('%d/%m/%Y')
+            last_updated = last_updated.strftime('%Y-%m-%d')
         
         return {
             'name': album_name,

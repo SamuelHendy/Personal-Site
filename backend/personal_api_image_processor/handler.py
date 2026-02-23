@@ -102,8 +102,9 @@ def process_image(raw_bucket, raw_key):
     try:
         img = Image.open(BytesIO(image_data))
         
-        # Extract EXIF before any processing
+        # Extract EXIF before any processing (save raw bytes too, as convert() loses them)
         exif_data = extract_exif(img)
+        exif_bytes = img.info.get('exif')
         
         # Convert to RGB if necessary (for WebP compatibility)
         if img.mode in ('RGBA', 'P'):
@@ -122,7 +123,6 @@ def process_image(raw_bucket, raw_key):
         
         # Save as WebP, preserving EXIF if available
         output_buffer = BytesIO()
-        exif_bytes = img.info.get('exif')
         if exif_bytes:
             img.save(output_buffer, 'WEBP', quality=WEBP_QUALITY, exif=exif_bytes)
         else:
