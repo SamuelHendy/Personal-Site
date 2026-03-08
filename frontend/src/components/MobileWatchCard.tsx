@@ -1,13 +1,17 @@
+import { cdn } from '../config/api'
+
 interface MobileWatchCardProps {
   modelId: string
+  thumbnail?: string | null
   onClick?: () => void
 }
 
 export default function MobileWatchCard({
   modelId,
+  thumbnail,
   onClick
 }: MobileWatchCardProps) {
-  // Generate a color based on modelId for visual distinction
+  // Generate a placeholder color based on modelId for visual distinction
   const colors = [
     'ef4444/ffffff', // red
     '3b82f6/ffffff', // blue
@@ -19,7 +23,9 @@ export default function MobileWatchCard({
     'f97316/ffffff', // orange
   ]
   const colorIndex = modelId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
-  const imageUrl = `https://placehold.co/900x1200/${colors[colorIndex]}?text=${modelId}`
+  const imageUrl = thumbnail
+    ? cdn.watches(thumbnail)
+    : `https://placehold.co/900x1200/${colors[colorIndex]}?text=${modelId}`
 
   return (
     <div 

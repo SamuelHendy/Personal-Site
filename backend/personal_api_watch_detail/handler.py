@@ -75,8 +75,11 @@ def lambda_handler(event, context):
         
         watch = items[0]
         
-        # Fetch images from S3
-        watch['Images'] = fetch_images(brand, model)
+        # Fetch images from S3 (including thumbnail and hero)
+        images_data = fetch_images(brand, model)
+        watch['Images'] = images_data['images']
+        watch['Hero'] = images_data['hero']
+        watch['Thumbnail'] = images_data['thumbnail']
         
         return {
             'statusCode': 200,
@@ -99,23 +102,41 @@ def lambda_handler(event, context):
 
 
 def fetch_images(brand, model):
-    """Fetch all images for a watch from S3 (excluding thumbnails and JSON sidecars)."""
+    """Fetch all images for a watch from S3, separating thumbnail, hero, and other images."""
     try:
         prefix = f'{brand}/{model}/'
         response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
         
         images = []
+        hero = None
+        thumbnail = None
+        
         for item in response.get('Contents', []):
             key = item['Key']
-            if key.endswith('/') or 'thumbnail' in key.lower():
+            filename = key.split('/')[-1].lower()
+            
+            # Skip folders and JSON sidecars
+            if key.endswith('/') or key.endswith('.json'):
                 continue
-            # Only include image files, not JSON sidecars
+            
+            # Check for thumbnail
+            if filename == 'thumbnail.webp':
+                thumbnail = key
+                continue
+            
+            # Check for hero image
+            if filename == 'hero.webp':
+                hero = key
+                continue
+            
+            # Include other image files
             if key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
                 images.append(key)
-        return images
+        
+        return {'images': images, 'hero': hero, 'thumbnail': thumbnail}
     except Exception as e:
         logger.error(f'Error fetching images for {brand}/{model}: {str(e)}')
-        return []
+        return {'images': [], 'hero': None, 'thumbnail': None}
 
 
 if __name__ == '__main__':

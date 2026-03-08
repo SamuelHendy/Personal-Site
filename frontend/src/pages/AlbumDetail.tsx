@@ -11,7 +11,7 @@ export default function AlbumDetail() {
   const [imagePaths, setImagePaths] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
   const { pageEnabled, isLoaded } = usePageEnabled()
@@ -116,7 +116,7 @@ export default function AlbumDetail() {
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
                 setThumbnailRect(rect)
-                setSelectedImage(imageUrl)
+                setSelectedImageIndex(index)
               }}
             >
               {/* Border div with rough effect - absolute so it doesn't take layout space */}
@@ -146,11 +146,14 @@ export default function AlbumDetail() {
 
       {/* Image Modal */}
       <AnimatePresence>
-        {selectedImage && (
+        {selectedImageIndex !== null && (
           <ImageModal
-            imageUrl={selectedImage}
-            onClose={() => setSelectedImage(null)}
+            imageUrl={cdn.albums(imagePaths[selectedImageIndex])}
+            onClose={() => setSelectedImageIndex(null)}
             thumbnailRect={thumbnailRect || undefined}
+            images={imagePaths.map(p => cdn.albums(p))}
+            currentIndex={selectedImageIndex}
+            onNavigate={(index) => setSelectedImageIndex(index)}
           />
         )}
       </AnimatePresence>

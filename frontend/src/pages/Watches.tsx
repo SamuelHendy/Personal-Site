@@ -536,6 +536,7 @@ export default function Watches() {
                   movementType={watch.Movement_Type}
                   manufacturedYear={watch.Manufactured_Year}
                   obtainedDate={watch.Obtained_Date}
+                  thumbnail={watch.Thumbnail}
                   pullPile={watch.pull_pile}
                   placePile={watch.place_pile}
                   debugPosition={DEBUG_MODE ? position : undefined}
@@ -641,6 +642,7 @@ export default function Watches() {
                 >
                   <MobileWatchCard
                     modelId={watch.Model}
+                    thumbnail={watch.Thumbnail}
                     onClick={index === mobileCardIndex ? () => handleOpenMobileModal(watch) : undefined}
                   />
                 </motion.div>

@@ -1,3 +1,5 @@
+import { cdn } from '../config/api'
+
 interface WatchCardProps {
   brand: string
   model: string
@@ -6,6 +8,7 @@ interface WatchCardProps {
   movementType: string
   manufacturedYear: string
   obtainedDate: string
+  thumbnail?: string | null
   pullPile?: {
     vertical: number
     tilt: number
@@ -28,6 +31,7 @@ export default function WatchCard({
   movementType,
   manufacturedYear,
   obtainedDate,
+  thumbnail,
   pullPile,
   placePile,
   debugPosition,
@@ -35,7 +39,9 @@ export default function WatchCard({
   onClick,
   isClickable
 }: WatchCardProps) {
-  const imageUrl = `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(brand)}`
+  const imageUrl = thumbnail 
+    ? cdn.watches(thumbnail)
+    : `https://placehold.co/900x1200/e5e5e5/525252?text=${encodeURIComponent(brand)}`
 
   return (
     <div 

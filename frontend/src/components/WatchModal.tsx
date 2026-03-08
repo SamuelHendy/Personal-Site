@@ -23,7 +23,7 @@ interface Watch {
   Lug_Width?: number
   Acquired_Condition?: string
   Is_Favourite?: boolean
-  Thumbnail?: string
+  Thumbnail?: string | null
   Images?: string[]
 }
 
@@ -88,18 +88,32 @@ export default function WatchModal({ watch, onClose, thumbnailRect, displayConfi
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
-  // Fetch full watch details including images
+  // Fetch full watch details including hero image
   useEffect(() => {
     const fetchImages = async () => {
       try {
         const res = await fetch(api.watchDetail(watch.Brand, watch.Model))
         if (res.ok) {
           const data = await res.json()
-          if (data.Images && data.Images.length > 0) {
-            setImages(data.Images.map((img: string) => cdn.watches(img)))
-          } else if (watch.Thumbnail) {
-            setImages([cdn.watches(watch.Thumbnail)])
+          // Priority: Hero image > Other images > Thumbnail
+          const imageList: string[] = []
+          
+          // Add hero image first if available (high-res for expanded view)
+          if (data.Hero) {
+            imageList.push(cdn.watches(data.Hero))
           }
+          
+          // Add other images
+          if (data.Images && data.Images.length > 0) {
+            imageList.push(...data.Images.map((img: string) => cdn.watches(img)))
+          }
+          
+          // Fallback to thumbnail if no other images
+          if (imageList.length === 0 && watch.Thumbnail) {
+            imageList.push(cdn.watches(watch.Thumbnail))
+          }
+          
+          setImages(imageList)
         }
       } catch {
         // If fetch fails, try thumbnail
