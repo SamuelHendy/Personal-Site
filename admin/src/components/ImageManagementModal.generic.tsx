@@ -33,6 +33,7 @@ export default function ImageManagementModal({
   const [thumbnail, setThumbnail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [useLossless, setUseLossless] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
@@ -148,7 +149,8 @@ export default function ImageManagementModal({
             path,
             filename: file.name,
             contentType: file.type,
-            isThumbnail
+            isThumbnail,
+            lossless: useLossless
           })
         })
 
@@ -271,6 +273,22 @@ export default function ImageManagementModal({
             <span>Processing {processingCount} file{processingCount !== 1 ? 's' : ''}...</span>
           </div>
         )}
+
+        {/* Lossless Toggle */}
+        <div className="form-control mb-4">
+          <label className="label cursor-pointer justify-start gap-3">
+            <input
+              type="checkbox"
+              className="toggle toggle-primary toggle-sm"
+              checked={useLossless}
+              onChange={(e) => setUseLossless(e.target.checked)}
+            />
+            <span className="label-text">
+              <span className="font-medium">Lossless compression</span>
+              <span className="text-base-content/60 ml-2">(larger files, no quality loss)</span>
+            </span>
+          </label>
+        </div>
 
         {/* Loading State */}
         {loading ? (
