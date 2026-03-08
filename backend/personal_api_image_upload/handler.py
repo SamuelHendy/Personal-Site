@@ -67,6 +67,7 @@ def lambda_handler(event, context):
     filename = body.get('filename', '')
     content_type = body.get('contentType')
     is_thumbnail = body.get('isThumbnail', False)
+    is_lossless = body.get('lossless', False)
     
     if not all([path, filename, content_type]):
         return error_response(400, 'Missing required fields: path, filename, contentType')
@@ -101,14 +102,21 @@ def lambda_handler(event, context):
     s3_key = f'{path}/{s3_filename}'
     
     try:
+        # Build params for presigned URL
+        put_params = {
+            'Bucket': RAW_BUCKET,
+            'Key': s3_key,
+            'ContentType': content_type,
+        }
+        
+        # Add lossless flag as metadata if requested
+        if is_lossless:
+            put_params['Metadata'] = {'lossless': 'true'}
+        
         # Generate presigned URL for PUT
         presigned_url = _s3.generate_presigned_url(
             'put_object',
-            Params={
-                'Bucket': RAW_BUCKET,
-                'Key': s3_key,
-                'ContentType': content_type,
-            },
+            Params=put_params,
             ExpiresIn=PRESIGNED_URL_EXPIRY
         )
         
