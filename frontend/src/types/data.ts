@@ -27,6 +27,7 @@ export interface Watch {
   Lug_Width?: number
   Acquired_Condition?: string
   Is_Favourite?: boolean
+  Thumbnail?: string | null
   parsedDate: Date
   pull_pile: { vertical: number; tilt: number }
   place_pile: { vertical: number; tilt: number }
