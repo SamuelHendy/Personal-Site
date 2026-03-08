@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import urllib.parse
 from datetime import datetime
 import boto3
 from io import BytesIO
@@ -77,7 +78,8 @@ def lambda_handler(event, context):
     for record in event.get('Records', []):
         try:
             bucket = record['s3']['bucket']['name']
-            key = record['s3']['object']['key']
+            # S3 event notifications URL-encode the key (+ for space, %XX for special chars)
+            key = urllib.parse.unquote_plus(record['s3']['object']['key'])
             
             logger.info(f'Processing: {bucket}/{key}')
             process_image(bucket, key)
