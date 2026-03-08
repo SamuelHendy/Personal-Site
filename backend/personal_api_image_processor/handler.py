@@ -25,9 +25,10 @@ DESTINATION_BUCKETS = {
 }
 
 # WebP quality settings
-THUMBNAIL_MAX_SIZE = 400  # Max dimension for thumbnails
-FULL_MAX_SIZE = 2000  # Max dimension for full images
-WEBP_QUALITY = 90
+THUMBNAIL_MAX_SIZE = 600  # Max dimension for thumbnails (card view)
+HERO_MAX_SIZE = 2000  # Max dimension for hero images (expanded view)
+FULL_MAX_SIZE = 2000  # Max dimension for full images (albums)
+WEBP_QUALITY = 95  # Default quality for lossy compression
 
 # Thumbnail aspect ratios by type (width:height)
 THUMBNAIL_ASPECT_RATIOS = {
@@ -35,6 +36,25 @@ THUMBNAIL_ASPECT_RATIOS = {
     'albums': (1, 1),     # Square
     'fishtank': (16, 9),  # Landscape
 }
+
+
+def save_webp(img, exif_bytes=None, lossless=False):
+    """Save image as WebP, either lossy or lossless."""
+    buffer = BytesIO()
+    if lossless:
+        # Lossless WebP - no quality parameter needed
+        if exif_bytes:
+            img.save(buffer, 'WEBP', lossless=True, exif=exif_bytes)
+        else:
+            img.save(buffer, 'WEBP', lossless=True)
+    else:
+        # Lossy WebP with quality setting
+        if exif_bytes:
+            img.save(buffer, 'WEBP', quality=WEBP_QUALITY, exif=exif_bytes)
+        else:
+            img.save(buffer, 'WEBP', quality=WEBP_QUALITY)
+    buffer.seek(0)
+    return buffer
 
 
 def lambda_handler(event, context):
@@ -93,10 +113,16 @@ def process_image(raw_bucket, raw_key):
     # Determine if this is a thumbnail
     is_thumbnail = filename.lower().startswith('thumbnail')
     
-    # Download the raw image
+    # Download the raw image and check for lossless metadata
     logger.info(f'Downloading {raw_key} from {raw_bucket}')
     response = _s3.get_object(Bucket=raw_bucket, Key=raw_key)
     image_data = response['Body'].read()
+    
+    # Check if lossless compression was requested via metadata
+    metadata = response.get('Metadata', {})
+    use_lossless = metadata.get('lossless', '').lower() == 'true'
+    if use_lossless:
+        logger.info('Lossless compression requested')
     
     # Process with Pillow
     try:
@@ -112,27 +138,57 @@ def process_image(raw_bucket, raw_key):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Resize and crop based on type
+        # Build output path - remove the path prefix since dest bucket is type-specific
+        # e.g., watches/Seiko/SKX007/file.jpg -> Seiko/SKX007/
+        output_path_parts = parts[1:-1]  # Skip prefix, skip filename
+        output_path = '/'.join(output_path_parts) + '/'
+        
+        # Process based on type
         if is_thumbnail:
-            # Crop to target aspect ratio, then resize
+            # For thumbnails, generate BOTH thumbnail (cropped) and hero (full res)
+            # This gives us a small image for cards and a large one for expanded view
+            
+            # 1. Create thumbnail (cropped to aspect ratio, smaller size)
+            # Thumbnails are always lossy for smaller file size
             target_ratio = THUMBNAIL_ASPECT_RATIOS.get(path_prefix, (1, 1))
-            img = crop_to_aspect_ratio(img, target_ratio)
-            img.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.Resampling.LANCZOS)
+            thumb_img = crop_to_aspect_ratio(img.copy(), target_ratio)
+            thumb_img.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.Resampling.LANCZOS)
+            
+            thumb_buffer = save_webp(thumb_img, exif_bytes, lossless=False)
+            
+            thumb_key = output_path + 'thumbnail.webp'
+            logger.info(f'Uploading thumbnail to {dest_bucket}/{thumb_key}')
+            _s3.put_object(
+                Bucket=dest_bucket,
+                Key=thumb_key,
+                Body=thumb_buffer.getvalue(),
+                ContentType='image/webp'
+            )
+            
+            # 2. Create hero image (full resolution, no crop)
+            # Hero can be lossless if requested
+            hero_img = img.copy()
+            hero_img.thumbnail((HERO_MAX_SIZE, HERO_MAX_SIZE), Image.Resampling.LANCZOS)
+            
+            hero_buffer = save_webp(hero_img, exif_bytes, lossless=use_lossless)
+            
+            hero_key = output_path + 'hero.webp'
+            logger.info(f'Uploading hero image to {dest_bucket}/{hero_key} (lossless={use_lossless})')
+            _s3.put_object(
+                Bucket=dest_bucket,
+                Key=hero_key,
+                Body=hero_buffer.getvalue(),
+                ContentType='image/webp'
+            )
+            
+            output_key = thumb_key  # For logging
         else:
+            # Regular image (not thumbnail) - just resize
+            # Respects lossless flag
             img.thumbnail((FULL_MAX_SIZE, FULL_MAX_SIZE), Image.Resampling.LANCZOS)
-        
-        # Save as WebP, preserving EXIF if available
-        output_buffer = BytesIO()
-        if exif_bytes:
-            img.save(output_buffer, 'WEBP', quality=WEBP_QUALITY, exif=exif_bytes)
-        else:
-            img.save(output_buffer, 'WEBP', quality=WEBP_QUALITY)
-        output_buffer.seek(0)
-        
-        # Determine output filename
-        if is_thumbnail:
-            output_filename = 'thumbnail.webp'
-        else:
+            
+            output_buffer = save_webp(img, exif_bytes, lossless=use_lossless)
+            
             # Keep original name (without extension), add .webp
             name_without_ext = os.path.splitext(filename)[0]
             # Prefix with EXIF date if available (for sorting)
@@ -141,24 +197,24 @@ def process_image(raw_bucket, raw_key):
                 output_filename = f'{date_prefix}_{name_without_ext}.webp'
             else:
                 output_filename = f'{name_without_ext}.webp'
-        
-        # Build output key - remove the path prefix since dest bucket is type-specific
-        # e.g., watches/Seiko/SKX007/file.jpg -> Seiko/SKX007/file.webp
-        output_path_parts = parts[1:-1]  # Skip prefix, skip filename
-        output_key = '/'.join(output_path_parts) + '/' + output_filename
-        
-        # Upload processed image to destination bucket
-        logger.info(f'Uploading processed image to {dest_bucket}/{output_key}')
-        _s3.put_object(
-            Bucket=dest_bucket,
-            Key=output_key,
-            Body=output_buffer.getvalue(),
-            ContentType='image/webp'
-        )
+            
+            output_key = output_path + output_filename
+            
+            logger.info(f'Uploading processed image to {dest_bucket}/{output_key}')
+            _s3.put_object(
+                Bucket=dest_bucket,
+                Key=output_key,
+                Body=output_buffer.getvalue(),
+                ContentType='image/webp'
+            )
         
         # Store EXIF data as JSON sidecar (if any EXIF exists)
+        # For thumbnails, store alongside hero image; for regular images, use output_filename
         if exif_data:
-            exif_key = '/'.join(output_path_parts) + '/' + os.path.splitext(output_filename)[0] + '_exif.json'
+            if is_thumbnail:
+                exif_key = output_path + 'hero_exif.json'
+            else:
+                exif_key = output_path + os.path.splitext(output_filename)[0] + '_exif.json'
             logger.info(f'Storing EXIF data to {dest_bucket}/{exif_key}')
             _s3.put_object(
                 Bucket=dest_bucket,
