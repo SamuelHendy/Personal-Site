@@ -50,6 +50,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs" {
     id     = "expire-old-logs"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90
     }
@@ -89,6 +91,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "athena_results" {
   rule {
     id     = "expire-query-results"
     status = "Enabled"
+
+    filter {}
 
     expiration {
       days = 7
