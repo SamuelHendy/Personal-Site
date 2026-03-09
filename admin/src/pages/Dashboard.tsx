@@ -93,10 +93,19 @@ interface PageEnabledConfig {
   albums?: boolean
 }
 
+interface MetricsSummary {
+  pageViews: number
+  uniqueVisitors: number
+  errors24h: number
+  avgResponseMs: number
+}
+
 export default function Dashboard() {
   const [watchCount, setWatchCount] = useState<number | null>(null)
   const [albumCount, setAlbumCount] = useState<number | null>(null)
   const [pageEnabled, setPageEnabled] = useState<PageEnabledConfig>({})
+  const [metrics, setMetrics] = useState<MetricsSummary | null>(null)
+  const [metricsLoading, setMetricsLoading] = useState(true)
 
   useEffect(() => {
     // Fetch watch count
@@ -131,6 +140,18 @@ export default function Dashboard() {
         }
       })
       .catch(() => setPageEnabled({}))
+
+    // Fetch analytics metrics
+    fetchWithAuth(api.admin.metrics)
+      .then(res => res.json())
+      .then(data => {
+        setMetrics(data)
+        setMetricsLoading(false)
+      })
+      .catch(() => {
+        setMetrics(null)
+        setMetricsLoading(false)
+      })
   }, [])
 
   const handleToggle = async (page: keyof PageEnabledConfig) => {
@@ -171,7 +192,9 @@ export default function Dashboard() {
                 <Eye className="w-6 h-6" />
               </div>
               <div className="stat-title">Page Views</div>
-              <div className="stat-value text-primary text-2xl">--</div>
+              <div className="stat-value text-primary text-2xl">
+                {metricsLoading ? '...' : (metrics?.pageViews ?? '--')}
+              </div>
               <div className="stat-desc">Today</div>
             </div>
             <div className="stat">
@@ -179,7 +202,9 @@ export default function Dashboard() {
                 <Users className="w-6 h-6" />
               </div>
               <div className="stat-title">Unique Visitors</div>
-              <div className="stat-value text-secondary text-2xl">--</div>
+              <div className="stat-value text-secondary text-2xl">
+                {metricsLoading ? '...' : (metrics?.uniqueVisitors ?? '--')}
+              </div>
               <div className="stat-desc">Today</div>
             </div>
             <div className="stat">
@@ -187,7 +212,9 @@ export default function Dashboard() {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="stat-title">Errors</div>
-              <div className="stat-value text-error text-2xl">--</div>
+              <div className="stat-value text-error text-2xl">
+                {metricsLoading ? '...' : (metrics?.errors24h ?? '--')}
+              </div>
               <div className="stat-desc">Last 24h</div>
             </div>
             <div className="stat">
@@ -195,7 +222,9 @@ export default function Dashboard() {
                 <Gauge className="w-6 h-6" />
               </div>
               <div className="stat-title">Avg Response</div>
-              <div className="stat-value text-success text-2xl">--</div>
+              <div className="stat-value text-success text-2xl">
+                {metricsLoading ? '...' : (metrics?.avgResponseMs ?? '--')}
+              </div>
               <div className="stat-desc">ms</div>
             </div>
           </div>
