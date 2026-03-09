@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, Fish, Image, TrendingUp, Users, Eye, AlertTriangle, Gauge, BarChart3, Check, X, Minus, Power } from 'lucide-react'
 import { api, fetchWithAuth } from '../config/api'
+import QRCodeModal from '../components/QRCodeModal'
 
 type ContentStatus = 'active' | 'partial' | 'empty' | 'disabled'
 
@@ -255,6 +256,7 @@ export default function Dashboard() {
 
   return (
     <div>
+      <QRCodeModal />
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-base-content/60 mt-1">Site analytics and content management</p>
