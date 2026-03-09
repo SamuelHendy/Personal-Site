@@ -36,6 +36,7 @@ jobs:
           - personal_api_image_status
           - personal_api_image_processor
           - personal_api_image_delete
+          - personal_api_metrics
     
     steps:
       - name: Checkout
