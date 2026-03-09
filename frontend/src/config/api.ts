@@ -17,5 +17,6 @@ export const api = {
   watchDetail: (brand: string, model: string) => `${BASE_URL}/watches/${brand}/${model}`,
   fishtankResidents: (type: 'fish' | 'plant') => `${BASE_URL}/fishtank/residents?type=${type}`,
   fishtankTimeline: `${BASE_URL}/fishtank/timeline`,
+  fishtankHero: `${BASE_URL}/fishtank/hero`,
   config: (configType: string, configKey: string) => `${BASE_URL}/config/${configType}/${configKey}`,
 }
