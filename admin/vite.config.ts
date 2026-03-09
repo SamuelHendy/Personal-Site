@@ -7,6 +7,7 @@ export default defineConfig({
   base: '/admin/',
   server: {
     port: 5174,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
