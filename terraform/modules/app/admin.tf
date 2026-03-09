@@ -24,20 +24,17 @@ resource "aws_cloudfront_function" "admin_rewrite" {
   EOF
 }
 
-# CloudFront Function to redirect /admin to /admin/
+# CloudFront Function to handle /admin (without trailing slash)
+# Rewrite to serve index.html instead of redirecting (avoids URL change on refresh)
 resource "aws_cloudfront_function" "admin_redirect" {
   name    = "admin-path-redirect"
   runtime = "cloudfront-js-2.0"
   publish = true
   code    = <<-EOF
     function handler(event) {
-      return {
-        statusCode: 301,
-        statusDescription: 'Moved Permanently',
-        headers: {
-          'location': { value: '/admin/' }
-        }
-      };
+      var request = event.request;
+      request.uri = '/admin/index.html';
+      return request;
     }
   EOF
 }
