@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import FadeImage from './FadeImage'
 
 interface Resident {
   id: string
@@ -22,7 +23,8 @@ export default function ResidentModal({ resident, onClose }: ResidentModalProps)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
 
-  const images = resident.images
+  const placeholderUrl = `https://placehold.co/1200x800/e5e5e5/525252?text=${encodeURIComponent(resident.name)}`
+  const images = resident.images.length > 0 ? resident.images : [placeholderUrl]
 
   useEffect(() => {
     // Check if mobile
@@ -139,10 +141,11 @@ export default function ResidentModal({ resident, onClose }: ResidentModalProps)
                     className="flex-shrink-0 h-full"
                     style={{ width: window.innerWidth }}
                   >
-                    <img
+                    <FadeImage
                       src={image}
                       alt={`${resident.name} - Image ${index + 1}`}
                       className="w-full h-full object-contain border-[12px] border-white"
+                      duration={300}
                     />
                   </div>
                 ))}
@@ -173,10 +176,12 @@ export default function ResidentModal({ resident, onClose }: ResidentModalProps)
         ) : (
           /* Desktop: Simple single image */
           <div className="relative w-full h-full flex items-center justify-center">
-            <img
+            <FadeImage
+              key={currentImageIndex}
               src={images[currentImageIndex]}
               alt={`${resident.name} - Image ${currentImageIndex + 1}`}
               className="max-w-full max-h-[90vh] w-auto h-auto object-contain border-[12px] border-white"
+              duration={300}
             />
 
             {/* Navigation arrows - desktop only */}
