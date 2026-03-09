@@ -167,7 +167,7 @@ resource "aws_cloudfront_distribution" "main" {
 
     min_ttl     = 0
     default_ttl = 0
-    max_ttl     = 900  # Allow up to 15 min cache if origin specifies
+    max_ttl     = 900 # Allow up to 15 min cache if origin specifies
   }
 
   # Public API behavior - GET only

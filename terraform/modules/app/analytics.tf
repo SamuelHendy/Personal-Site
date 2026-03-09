@@ -381,7 +381,7 @@ resource "aws_lambda_function" "metrics" {
   role          = aws_iam_role.metrics_lambda.arn
   handler       = "handler.lambda_handler"
   runtime       = "python3.11"
-  timeout       = 60  # Athena queries can take time
+  timeout       = 60 # Athena queries can take time
   memory_size   = 256
 
   filename         = "${path.module}/templates/lambda/placeholder.zip"
