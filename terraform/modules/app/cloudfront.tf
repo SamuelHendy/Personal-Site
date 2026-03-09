@@ -67,6 +67,13 @@ resource "aws_cloudfront_distribution" "main" {
   price_class         = "PriceClass_100"
   aliases             = var.domain_name != null ? [var.domain_name] : []
 
+  # Access logging for analytics
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.logs.bucket_domain_name
+    prefix          = "cloudfront/"
+  }
+
   viewer_certificate {
     acm_certificate_arn            = var.domain_name != null ? aws_acm_certificate.cloudfront[0].arn : null
     ssl_support_method             = var.domain_name != null ? "sni-only" : null
@@ -141,6 +148,7 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   # Admin API behavior - allows all methods for admin routes
+  # Caching controlled by origin Cache-Control headers (metrics API uses this)
   ordered_cache_behavior {
     path_pattern           = "/api/admin/*"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
@@ -159,7 +167,7 @@ resource "aws_cloudfront_distribution" "main" {
 
     min_ttl     = 0
     default_ttl = 0
-    max_ttl     = 0
+    max_ttl     = 900  # Allow up to 15 min cache if origin specifies
   }
 
   # Public API behavior - GET only
