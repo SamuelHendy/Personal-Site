@@ -50,6 +50,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs" {
     id     = "expire-old-logs"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90
     }
@@ -89,6 +91,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "athena_results" {
   rule {
     id     = "expire-query-results"
     status = "Enabled"
+
+    filter {}
 
     expiration {
       days = 7
@@ -377,7 +381,7 @@ resource "aws_lambda_function" "metrics" {
   role          = aws_iam_role.metrics_lambda.arn
   handler       = "handler.lambda_handler"
   runtime       = "python3.11"
-  timeout       = 60  # Athena queries can take time
+  timeout       = 60 # Athena queries can take time
   memory_size   = 256
 
   filename         = "${path.module}/templates/lambda/placeholder.zip"
