@@ -33,9 +33,9 @@ export default function FishTank() {
       {/* Timeline Section */}
       <TimelineSection />
 
-      {/* Fish Section */}
+      {/* Inhabitants Section */}
       <ResidentSection 
-        title="Fish"
+        title="Inhabitants"
         type="fish"
       />
 
