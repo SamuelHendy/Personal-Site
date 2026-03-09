@@ -27,6 +27,10 @@ export const api = {
     imageUpload: `${BASE_URL}/admin/images/upload`,
     imageStatus: (path: string) => `${BASE_URL}/admin/images/status/${path}`,
     imageDelete: `${BASE_URL}/admin/images/delete`,
+    metrics: `${BASE_URL}/admin/metrics`,
+    metricsTraffic: (days: number) => `${BASE_URL}/admin/metrics?type=traffic&days=${days}`,
+    metricsPages: `${BASE_URL}/admin/metrics?type=pages`,
+    metricsApi: `${BASE_URL}/admin/metrics?type=api`,
   },
 }
 
