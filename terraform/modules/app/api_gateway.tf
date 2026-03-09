@@ -211,6 +211,28 @@ resource "aws_apigatewayv2_route" "fishtank_timeline" {
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_timeline.id}"
 }
 
+# Fishtank Hero Lambda permission
+resource "aws_lambda_permission" "fishtank_hero" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.fishtank_hero.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "fishtank_hero" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.fishtank_hero.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "fishtank_hero" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/fishtank/hero"
+  target    = "integrations/${aws_apigatewayv2_integration.fishtank_hero.id}"
+}
+
 # Public Config Lambda (read-only)
 resource "aws_lambda_permission" "config" {
   statement_id  = "AllowAPIGateway"
@@ -367,6 +389,148 @@ resource "aws_apigatewayv2_route" "admin_config_put" {
   api_id             = aws_apigatewayv2_api.main.id
   route_key          = "PUT /api/admin/config/{config_type}/{config_key}"
   target             = "integrations/${aws_apigatewayv2_integration.admin_config.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# Admin Fishtank Residents Lambda permission
+resource "aws_lambda_permission" "admin_fishtank_residents" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_fishtank_residents.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Fishtank Residents integration
+resource "aws_apigatewayv2_integration" "admin_fishtank_residents" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_fishtank_residents.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Fishtank Residents routes - all protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_fishtank_residents_list" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/fishtank/residents"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_residents.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_residents_create" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /api/admin/fishtank/residents"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_residents.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_residents_update" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/fishtank/residents/{type}/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_residents.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_residents_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/fishtank/residents/{type}/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_residents.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# Admin Fishtank Timeline Lambda permission
+resource "aws_lambda_permission" "admin_fishtank_timeline" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_fishtank_timeline.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Fishtank Timeline integration
+resource "aws_apigatewayv2_integration" "admin_fishtank_timeline" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_fishtank_timeline.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Fishtank Timeline routes - all protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_fishtank_timeline_list" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/fishtank/timeline"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_timeline.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_timeline_create" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /api/admin/fishtank/timeline"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_timeline.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_timeline_update" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/fishtank/timeline/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_timeline.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_timeline_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/fishtank/timeline/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_timeline.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# Admin Fishtank Hero Lambda permission
+resource "aws_lambda_permission" "admin_fishtank_hero" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin_fishtank_hero.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+# Admin Fishtank Hero integration
+resource "aws_apigatewayv2_integration" "admin_fishtank_hero" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.admin_fishtank_hero.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# Admin Fishtank Hero routes - all protected by Cognito authorizer
+resource "aws_apigatewayv2_route" "admin_fishtank_hero_list" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /api/admin/fishtank/hero"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_hero.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_hero_set_active" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PUT /api/admin/fishtank/hero/{filename}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_hero.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "admin_fishtank_hero_delete" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /api/admin/fishtank/hero/{filename}"
+  target             = "integrations/${aws_apigatewayv2_integration.admin_fishtank_hero.id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }

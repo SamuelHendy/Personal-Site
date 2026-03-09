@@ -94,7 +94,7 @@ resource "aws_lambda_function" "recently_updated" {
 
   environment {
     variables = {
-      BUCKET_NAME = var.albums_bucket_name
+      TABLE_NAME = var.albums_table_name
     }
   }
 
@@ -209,6 +209,31 @@ resource "aws_lambda_function" "fishtank_timeline" {
   }
 }
 
+# Fishtank hero lambda (public - returns active hero image)
+resource "aws_lambda_function" "fishtank_hero" {
+  function_name = "personal-api-fishtank-hero"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      BUCKET_NAME = var.fishtank_bucket_name
+    }
+  }
+
+  tags = local.common_tags
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
 # Public Config lambda (read-only, no auth)
 resource "aws_lambda_function" "config" {
   function_name = "personal-api-config"
@@ -314,6 +339,90 @@ resource "aws_lambda_function" "admin_config" {
   tags = merge(local.common_tags, {
     Name     = "personal-api-admin-config"
     Function = "Admin Site Config"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Admin Fishtank Residents CRUD lambda (protected by Cognito)
+resource "aws_lambda_function" "admin_fishtank_residents" {
+  function_name = "personal-api-admin-fishtank-residents"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      TABLE_NAME = var.fishtank_residents_table_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-admin-fishtank-residents"
+    Function = "Admin Fishtank Residents CRUD"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Admin Fishtank Timeline CRUD lambda (protected by Cognito)
+resource "aws_lambda_function" "admin_fishtank_timeline" {
+  function_name = "personal-api-admin-fishtank-timeline"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      TABLE_NAME = var.fishtank_timeline_table_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-admin-fishtank-timeline"
+    Function = "Admin Fishtank Timeline CRUD"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Admin Fishtank Hero lambda (protected by Cognito)
+resource "aws_lambda_function" "admin_fishtank_hero" {
+  function_name = "personal-api-admin-fishtank-hero"
+  role          = aws_iam_role.lambda_admin.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      BUCKET_NAME = var.fishtank_bucket_name
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-admin-fishtank-hero"
+    Function = "Admin Fishtank Hero Management"
   })
 
   lifecycle {

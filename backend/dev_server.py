@@ -28,12 +28,62 @@ from personal_api_watches.handler import lambda_handler as watches_handler
 from personal_api_watch_detail.handler import lambda_handler as watch_detail_handler
 from personal_api_fishtank_residents.handler import lambda_handler as fishtank_residents_handler
 from personal_api_fishtank_timeline.handler import lambda_handler as fishtank_timeline_handler
+from personal_api_fishtank_hero.handler import lambda_handler as fishtank_hero_handler
 from personal_api_admin_watches.handler import lambda_handler as admin_watches_handler
 from personal_api_admin_albums.handler import lambda_handler as admin_albums_handler
 from personal_api_admin_config.handler import lambda_handler as admin_config_handler
+from personal_api_admin_fishtank_residents.handler import lambda_handler as admin_fishtank_residents_handler
+from personal_api_admin_fishtank_timeline.handler import lambda_handler as admin_fishtank_timeline_handler
+from personal_api_admin_fishtank_hero.handler import lambda_handler as admin_fishtank_hero_handler
 from personal_api_config.handler import lambda_handler as config_handler
 from personal_api_image_upload.handler import lambda_handler as image_upload_handler
 from personal_api_image_status.handler import lambda_handler as image_status_handler
+
+# Mock metrics handler for local dev (Athena not available locally)
+def mock_metrics_handler(event, context):
+    """Return mock metrics data for local development."""
+    import json
+    params = event.get('queryStringParameters') or {}
+    metric_type = params.get('type', 'summary')
+    
+    if metric_type == 'summary':
+        data = {
+            'pageViews': 1234,
+            'uniqueVisitors': 567,
+            'errors24h': 12,
+            'avgResponseMs': 45.2
+        }
+    elif metric_type == 'traffic':
+        data = [
+            {'date': '2026-03-03', 'views': 150, 'visitors': 80},
+            {'date': '2026-03-04', 'views': 180, 'visitors': 95},
+            {'date': '2026-03-05', 'views': 220, 'visitors': 110},
+            {'date': '2026-03-06', 'views': 190, 'visitors': 100},
+            {'date': '2026-03-07', 'views': 250, 'visitors': 130},
+            {'date': '2026-03-08', 'views': 280, 'visitors': 145},
+            {'date': '2026-03-09', 'views': 200, 'visitors': 105},
+        ]
+    elif metric_type == 'pages':
+        data = [
+            {'page': '/', 'views': 500},
+            {'page': '/watches', 'views': 320},
+            {'page': '/albums', 'views': 280},
+            {'page': '/fishtank', 'views': 150},
+        ]
+    elif metric_type == 'api':
+        data = [
+            {'endpoint': '/api/watches', 'requests': 450, 'avg_ms': 35.2, 'max_ms': 120.5},
+            {'endpoint': '/api/albums', 'requests': 380, 'avg_ms': 42.1, 'max_ms': 95.3},
+            {'endpoint': '/api/health', 'requests': 200, 'avg_ms': 5.1, 'max_ms': 15.0},
+        ]
+    else:
+        return {'statusCode': 400, 'body': json.dumps({'error': f'Unknown type: {metric_type}'})}
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps(data)
+    }
 
 app = Flask(__name__)
 CORS(app)
@@ -109,6 +159,11 @@ def fishtank_timeline():
     return invoke_lambda(fishtank_timeline_handler)
 
 
+@app.route('/fishtank/hero', methods=['GET'])
+def fishtank_hero():
+    return invoke_lambda(fishtank_hero_handler)
+
+
 # Admin routes (no auth in dev mode)
 @app.route('/admin/watches', methods=['GET', 'POST'])
 def admin_watches():
@@ -138,6 +193,45 @@ def admin_album_detail(album_name):
 def admin_config(config_type, config_key):
     body = request.get_data(as_text=True) if request.method == 'PUT' else None
     return invoke_lambda(admin_config_handler, path_params={'config_type': config_type, 'config_key': config_key}, body=body)
+
+
+@app.route('/admin/fishtank/residents', methods=['GET', 'POST'])
+def admin_fishtank_residents():
+    body = request.get_data(as_text=True) if request.method == 'POST' else None
+    return invoke_lambda(admin_fishtank_residents_handler, body=body)
+
+
+@app.route('/admin/fishtank/residents/<resident_type>/<resident_id>', methods=['PUT', 'DELETE'])
+def admin_fishtank_resident_detail(resident_type, resident_id):
+    body = request.get_data(as_text=True) if request.method == 'PUT' else None
+    return invoke_lambda(admin_fishtank_residents_handler, path_params={'type': resident_type, 'id': resident_id}, body=body)
+
+
+@app.route('/admin/fishtank/timeline', methods=['GET', 'POST'])
+def admin_fishtank_timeline():
+    body = request.get_data(as_text=True) if request.method == 'POST' else None
+    return invoke_lambda(admin_fishtank_timeline_handler, body=body)
+
+
+@app.route('/admin/fishtank/timeline/<event_id>', methods=['PUT', 'DELETE'])
+def admin_fishtank_timeline_detail(event_id):
+    body = request.get_data(as_text=True) if request.method == 'PUT' else None
+    return invoke_lambda(admin_fishtank_timeline_handler, path_params={'id': event_id}, body=body)
+
+
+@app.route('/admin/fishtank/hero', methods=['GET'])
+def admin_fishtank_hero():
+    return invoke_lambda(admin_fishtank_hero_handler)
+
+
+@app.route('/admin/fishtank/hero/<filename>', methods=['PUT', 'DELETE'])
+def admin_fishtank_hero_detail(filename):
+    return invoke_lambda(admin_fishtank_hero_handler, path_params={'filename': filename})
+
+
+@app.route('/admin/metrics', methods=['GET'])
+def admin_metrics():
+    return invoke_lambda(mock_metrics_handler)
 
 
 @app.route('/config/<config_type>/<config_key>', methods=['GET'])
@@ -194,6 +288,14 @@ if __name__ == '__main__':
     print("  DELETE /admin/albums/<album_name>   - Delete album")
     print("  GET    /admin/config/<type>/<key>    - Get config")
     print("  PUT    /admin/config/<type>/<key>    - Update config")
+    print("  GET    /admin/fishtank/residents     - List all residents")
+    print("  POST   /admin/fishtank/residents     - Create resident")
+    print("  PUT    /admin/fishtank/residents/<type>/<id> - Update resident")
+    print("  DELETE /admin/fishtank/residents/<type>/<id> - Delete resident")
+    print("  GET    /admin/fishtank/timeline      - List all timeline events")
+    print("  POST   /admin/fishtank/timeline      - Create event")
+    print("  PUT    /admin/fishtank/timeline/<id> - Update event")
+    print("  DELETE /admin/fishtank/timeline/<id> - Delete event")
     print("  POST   /admin/images/upload          - Get presigned URL for upload")
     print("  GET    /admin/images/status/<type>/<id> - Check processing status")
     print("")

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from decimal import Decimal
 import boto3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -13,6 +14,13 @@ _s3 = None
 TABLE_NAME = os.environ.get('TABLE_NAME', 'fishtank-timeline')
 BUCKET_NAME = os.environ.get('BUCKET_NAME', 'shendy-fishtank')
 MAX_WORKERS = 10
+
+
+def decimal_default(obj):
+    """JSON serializer for Decimal types from DynamoDB."""
+    if isinstance(obj, Decimal):
+        return int(obj) if obj % 1 == 0 else float(obj)
+    raise TypeError(f'Object of type {type(obj)} is not JSON serializable')
 
 
 def lambda_handler(event, context):
@@ -43,8 +51,8 @@ def lambda_handler(event, context):
                 item = future_to_item[future]
                 item['Images'] = future.result()
         
-        # Sort by date (newest first)
-        items.sort(key=lambda x: x.get('Date', ''), reverse=True)
+        # Sort by date (oldest first - chronological)
+        items.sort(key=lambda x: x.get('Date', ''))
         
         return {
             'statusCode': 200,
@@ -52,7 +60,7 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps(items)
+            'body': json.dumps(items, default=decimal_default)
         }
     except Exception as e:
         logger.error(f'Error: {str(e)}')

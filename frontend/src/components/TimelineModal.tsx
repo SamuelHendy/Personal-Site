@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import FadeImage from './FadeImage'
 
 interface TimelineEvent {
   id: string
@@ -70,8 +71,9 @@ export default function TimelineModal({ event, onClose }: TimelineModalProps) {
 
       {/* Container for both boxes */}
       <div className="relative w-full h-full flex items-center justify-center px-8">
-        <div className="flex items-start gap-8">
-        {/* Left box - Image carousel */}
+        <div className={`flex items-start gap-8 ${event.images.length === 0 ? 'justify-center' : ''}`}>
+        {/* Left box - Image carousel (only if images exist) */}
+        {event.images.length > 0 && (
         <motion.div
           className="relative flex items-center justify-center"
           style={{ maxWidth: '1200px', maxHeight: '80vh' }}
@@ -82,10 +84,12 @@ export default function TimelineModal({ event, onClose }: TimelineModalProps) {
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         >
           <div className="relative w-full h-full flex items-center justify-center">
-            <img
+            <FadeImage
+              key={currentImageIndex}
               src={event.images[currentImageIndex]}
               alt={`${event.title} - Image ${currentImageIndex + 1}`}
               className="max-w-full max-h-full w-auto h-auto object-contain border-[12px] border-white"
+              duration={300}
             />
 
             {/* Navigation arrows - only show if multiple images */}
@@ -128,6 +132,7 @@ export default function TimelineModal({ event, onClose }: TimelineModalProps) {
             )}
           </div>
         </motion.div>
+        )}
 
         {/* Right box - Content */}
         <motion.div
@@ -137,7 +142,7 @@ export default function TimelineModal({ event, onClose }: TimelineModalProps) {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300, delay: 0.1 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300, delay: event.images.length > 0 ? 0.1 : 0 }}
         >
           {/* Rough border div - sibling approach */}
           <div className="rough-border absolute inset-0 border border-[var(--color-text-primary)] bg-[var(--color-background)] pointer-events-none" />

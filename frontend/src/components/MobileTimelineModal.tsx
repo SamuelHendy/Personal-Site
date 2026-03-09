@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { X, GripHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import FadeImage from './FadeImage'
 
 interface TimelineEvent {
   id: string
@@ -16,9 +17,11 @@ interface MobileTimelineModalProps {
 }
 
 export default function MobileTimelineModal({ event, onClose }: MobileTimelineModalProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(event.images.length === 0) // Start expanded if no images
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
+  
+  const hasImages = event.images.length > 0
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -26,11 +29,11 @@ export default function MobileTimelineModal({ event, onClose }: MobileTimelineMo
   }
 
   // Calculate image height based on 3:4 aspect ratio
-  const imageHeight = (window.innerWidth * 4) / 3
+  const imageHeight = hasImages ? (window.innerWidth * 4) / 3 : 0
   // When collapsed, show only the portion below the image
-  const collapsedHeight = viewportHeight - imageHeight
-  // When expanded, show 85vh of content
-  const expandedHeight = viewportHeight * 0.85 
+  const collapsedHeight = hasImages ? viewportHeight - imageHeight : viewportHeight
+  // When expanded, show 85vh of content (or full height if no images)
+  const expandedHeight = hasImages ? viewportHeight * 0.85 : viewportHeight 
 
   // Track viewport height changes
   useEffect(() => {
@@ -72,7 +75,8 @@ export default function MobileTimelineModal({ event, onClose }: MobileTimelineMo
         <X size={20} />
       </button>
 
-      {/* Image carousel - 3:4 aspect ratio at top, stays fixed */}
+      {/* Image carousel - 3:4 aspect ratio at top, stays fixed (only if images exist) */}
+      {hasImages && (
       <div className="w-full bg-[var(--color-surface)] flex-shrink-0 relative" style={{ aspectRatio: '3/4' }}>
         <motion.div
           className="flex h-full"
@@ -109,10 +113,11 @@ export default function MobileTimelineModal({ event, onClose }: MobileTimelineMo
               className="flex-shrink-0 h-full"
               style={{ width: window.innerWidth }}
             >
-              <img
+              <FadeImage
                 src={image}
                 alt={`${event.title} - Image ${index + 1}`}
-                className="w-full h-full object-cover bg-image" // Here we are cropping the image on mobile mode, This makes it fill the page, but I'm not sure when we actually have photos what would look better.
+                className="w-full h-full object-cover bg-image"
+                duration={300}
               />
             </div>
           ))}
@@ -139,6 +144,7 @@ export default function MobileTimelineModal({ event, onClose }: MobileTimelineMo
           </div>
         )}
       </div>
+      )}
 
       {/* Content area - draggable, overlays image when expanded */}
       <motion.div 

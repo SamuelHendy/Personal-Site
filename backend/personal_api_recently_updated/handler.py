@@ -1,16 +1,16 @@
 import json
 import logging
+import os
 import boto3
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from boto3.dynamodb.conditions import Attr
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-_s3 = None
+_dynamodb = None
 
-BUCKET_NAME = 'shendy-albums'
-MAX_WORKERS = 10
+TABLE_NAME = os.environ.get('TABLE_NAME', 'albums')
 
 
 def lambda_handler(event, context):
@@ -19,11 +19,11 @@ def lambda_handler(event, context):
     Triggered by API Gateway for GET /recently-updated
     Query params:
       - limit: number of albums to return (default 5)
-    Returns the N most recently updated albums.
+    Returns the N most recently updated albums (excluding hidden ones).
     """
-    global _s3
-    if _s3 is None:
-        _s3 = boto3.client('s3')
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'eu-west-2'))
     
     # Get limit from query params (default 5)
     query_params = event.get('queryStringParameters') or {}
@@ -39,9 +39,12 @@ def lambda_handler(event, context):
         # Sort by last_updated descending and take top N
         albums_with_dates = []
         for album in albums:
-            if album['last_updated'] != 'n/a':
-                album['_date'] = datetime.strptime(album['last_updated'], '%Y-%m-%d')
-                albums_with_dates.append(album)
+            if album['last_updated'] and album['last_updated'] != 'n/a':
+                try:
+                    album['_date'] = datetime.strptime(album['last_updated'], '%Y-%m-%d')
+                    albums_with_dates.append(album)
+                except ValueError:
+                    pass
         
         albums_with_dates.sort(key=lambda x: x['_date'], reverse=True)
         recent_albums = albums_with_dates[:limit]
@@ -71,75 +74,27 @@ def lambda_handler(event, context):
 
 
 def get_albums():
-    """List all albums from S3 bucket using concurrent fetching."""
-    # Get top-level folders (albums) using delimiter
-    response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Delimiter='/')
+    """List all visible albums from DynamoDB table."""
+    table = _dynamodb.Table(TABLE_NAME)
     
-    # Extract album names from CommonPrefixes
-    album_names = []
-    for prefix in response.get('CommonPrefixes', []):
-        album_name = prefix['Prefix'].rstrip('/')
-        if 'hidden' not in album_name.lower():
-            album_names.append(album_name)
+    # Scan for non-hidden albums
+    response = table.scan(
+        FilterExpression=Attr('IsHidden').ne(True) | Attr('IsHidden').not_exists()
+    )
+    items = response.get('Items', [])
     
-    # Fetch album details concurrently
+    # Format response
     albums = []
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_album = {
-            executor.submit(fetch_album_details, name): name 
-            for name in album_names
-        }
-        
-        for future in as_completed(future_to_album):
-            album_data = future.result()
-            if album_data:
-                albums.append(album_data)
+    for item in items:
+        albums.append({
+            'name': item['AlbumName'],
+            'display_name': item.get('DisplayName'),
+            'thumbnail': item.get('Thumbnail', f"{item['AlbumName']}/thumbnail.jpg"),
+            'img_count': int(item.get('ImageCount', 0)),
+            'last_updated': item.get('LastUpdated', 'n/a')
+        })
     
     return albums
-
-
-def fetch_album_details(album_name):
-    """Fetch details for a single album (runs in thread pool)."""
-    try:
-        response = _s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f'{album_name}/')
-        items = response.get('Contents', [])
-        
-        # Filter out folders
-        images = [item for item in items if not item['Key'].endswith('/')]
-        
-        # Skip hidden albums
-        if any('/hidden/' in img['Key'] for img in images):
-            return None
-        
-        # Count images (exclude thumbnails, hidden, and JSON sidecars)
-        img_count = len([i for i in images 
-                        if 'thumbnail' not in i['Key'].lower() 
-                        and 'hidden' not in i['Key'].split('/')
-                        and i['Key'].endswith(('.webp', '.jpg', '.jpeg', '.png'))])
-        
-        thumbnail = ''
-        last_updated = 'n/a'
-        
-        if images:
-            last_updated = images[0]['LastModified']
-            for image in images:
-                key = image['Key']
-                # Only consider image files for thumbnail (not JSON sidecars)
-                if 'thumbnail' in key.lower() and key.endswith(('.webp', '.jpg', '.jpeg', '.png')):
-                    thumbnail = key
-                if image['LastModified'] > last_updated:
-                    last_updated = image['LastModified']
-            last_updated = last_updated.strftime('%Y-%m-%d')
-        
-        return {
-            'name': album_name,
-            'thumbnail': thumbnail,
-            'img_count': img_count,
-            'last_updated': last_updated
-        }
-    except Exception as e:
-        logger.error(f'Error fetching album {album_name}: {str(e)}')
-        return None
 
 
 if __name__ == '__main__':

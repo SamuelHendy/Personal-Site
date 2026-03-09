@@ -1,3 +1,5 @@
+import FadeImage from './FadeImage'
+
 interface Resident {
   id: string
   name: string
@@ -20,6 +22,9 @@ export default function ResidentCard({ resident, onClick }: ResidentCardProps) {
     return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
   }
 
+  const placeholderUrl = `https://placehold.co/1200x800/e5e5e5/525252?text=${encodeURIComponent(resident.name)}`
+  const imageUrl = resident.images.length > 0 ? resident.images[0] : placeholderUrl
+
   return (
     <div 
       onClick={onClick}
@@ -32,10 +37,12 @@ export default function ResidentCard({ resident, onClick }: ResidentCardProps) {
       
       {/* Image */}
       <div className="aspect-video overflow-hidden relative">
-        <img 
-          src={resident.images[0]} 
+        <FadeImage 
+          src={imageUrl} 
           alt={resident.name}
           className="w-full h-full object-cover"
+          duration={300}
+          onError={(e) => { e.currentTarget.src = placeholderUrl }}
         />
         {resident.status === 'past' && (
           <div className="absolute top-2 right-2 rough-border bg-[var(--color-background)] border border-[var(--color-text-primary)] px-2 py-1 z-10">

@@ -38,6 +38,9 @@ THUMBNAIL_ASPECT_RATIOS = {
     'fishtank': (16, 9),  # Landscape
 }
 
+# Hero aspect ratio for fishtank (matches FishTankHero.tsx aspect-[11/5])
+FISHTANK_HERO_ASPECT_RATIO = (11, 5)
+
 
 def save_webp(img, exif_bytes=None, lossless=False):
     """Save image as WebP, either lossy or lossless."""
@@ -185,18 +188,29 @@ def process_image(raw_bucket, raw_key):
             
             output_key = thumb_key  # For logging
         else:
-            # Regular image (not thumbnail) - just resize
-            # Respects lossless flag
+            # Regular image (not thumbnail)
+            # Check if this is a fishtank hero image - needs cropping to 11:5
+            is_fishtank_hero = path_prefix == 'fishtank' and 'hero' in parts
+            
+            if is_fishtank_hero:
+                # Crop to 11:5 aspect ratio for fishtank hero
+                img = crop_to_aspect_ratio(img, FISHTANK_HERO_ASPECT_RATIO)
+                logger.info(f'Cropped fishtank hero to 11:5 aspect ratio')
+            
+            # Resize to max size
             img.thumbnail((FULL_MAX_SIZE, FULL_MAX_SIZE), Image.Resampling.LANCZOS)
             
             output_buffer = save_webp(img, exif_bytes, lossless=use_lossless)
             
             # Keep original name (without extension), add .webp
             name_without_ext = os.path.splitext(filename)[0]
-            # Prefix with EXIF date if available (for sorting)
-            date_prefix = get_exif_date_prefix(exif_data)
-            if date_prefix:
-                output_filename = f'{date_prefix}_{name_without_ext}.webp'
+            # Prefix with EXIF date if available (for sorting) - but not for hero images
+            if not is_fishtank_hero:
+                date_prefix = get_exif_date_prefix(exif_data)
+                if date_prefix:
+                    output_filename = f'{date_prefix}_{name_without_ext}.webp'
+                else:
+                    output_filename = f'{name_without_ext}.webp'
             else:
                 output_filename = f'{name_without_ext}.webp'
             

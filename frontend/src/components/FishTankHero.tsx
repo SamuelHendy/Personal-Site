@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
+import { api, cdn } from '../config/api'
+import FadeImage from './FadeImage'
 
 export default function FishTankHero() {
   const [headerHeight, setHeaderHeight] = useState(0)
@@ -11,6 +13,37 @@ export default function FishTankHero() {
   const [imageTransform, setImageTransform] = useState({ marginTop: 0, translateX: 0 })
   const [isAnimating, setIsAnimating] = useState(false)
   const [specsSpacing, setSpecsSpacing] = useState(0)
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null)
+  const [imageError, setImageError] = useState(false)
+  const [heroLoaded, setHeroLoaded] = useState(false)
+  const [heroLoading, setHeroLoading] = useState(true) // Still fetching API
+
+  // Fetch active hero image
+  useEffect(() => {
+    const fetchHero = async () => {
+      try {
+        const res = await fetch(api.fishtankHero)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.url) {
+            setHeroImageUrl(cdn.fishtank(data.url))
+          } else {
+            // No hero image, show gradient
+            setHeroLoading(false)
+            setHeroLoaded(true)
+          }
+        } else {
+          setHeroLoading(false)
+          setHeroLoaded(true)
+        }
+      } catch (err) {
+        console.error('Failed to fetch hero:', err)
+        setHeroLoading(false)
+        setHeroLoaded(true)
+      }
+    }
+    fetchHero()
+  }, [])
 
   useEffect(() => {
     // Measure header height
@@ -118,7 +151,7 @@ export default function FishTankHero() {
         {/* Hero Image with horizontal scroll animation (mobile only) */}
         <div 
           ref={imageRef}
-          className="overflow-hidden aspect-[11/5]"
+          className="overflow-hidden aspect-[11/5] bg-black"
           style={{ 
             height: window.innerWidth >= 768 ? 'auto' : '100vh',
             width: '100vw',
@@ -126,14 +159,32 @@ export default function FishTankHero() {
             top: window.innerWidth >= 768 ? 'auto' : (isAnimating ? 0 : 'auto')
           }}
         >
-          <div 
-            className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400"
-            style={{ 
-              width: window.innerWidth >= 768 ? '100%' : '300%',
-              transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`
-            }}
-          >
-          </div>
+          {heroImageUrl && !imageError ? (
+            <FadeImage 
+              src={heroImageUrl}
+              alt="Aquarium hero"
+              className="h-full object-cover"
+              duration={500}
+              style={{ 
+                width: window.innerWidth >= 768 ? '100%' : '300%',
+                transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`
+              }}
+              onError={() => setImageError(true)}
+              onLoad={() => {
+                setHeroLoading(false)
+                setHeroLoaded(true)
+              }}
+            />
+          ) : !heroLoading ? (
+            <div 
+              className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
+              style={{ 
+                width: window.innerWidth >= 768 ? '100%' : '300%',
+                transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`,
+                opacity: heroLoaded ? 1 : 0
+              }}
+            />
+          ) : null}
         </div>
 
         {/* Spacer for scroll distance during animation (mobile only) */}

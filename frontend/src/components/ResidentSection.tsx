@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import ResidentCard from './ResidentCard'
 import ResidentModal from './ResidentModal'
+import { api, cdn } from '../config/api'
 
 interface Resident {
   id: string
@@ -11,7 +12,22 @@ interface Resident {
   dateAdded: string
   dateRemoved?: string
   status: 'current' | 'past'
+  quantity?: number
   notes?: string
+}
+
+interface ApiResident {
+  Type: string
+  Id: string
+  Name?: string
+  ScientificName?: string
+  AddedDate?: string
+  IsActive?: boolean
+  Status?: 'current' | 'past'
+  Quantity?: number
+  Notes?: string
+  Images?: string[]
+  Thumbnail?: string
 }
 
 interface ResidentSectionProps {
@@ -22,66 +38,61 @@ interface ResidentSectionProps {
 export default function ResidentSection({ title, type }: ResidentSectionProps) {
   const [showPast, setShowPast] = useState(false)
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null)
+  const [residents, setResidents] = useState<Resident[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // TODO: Replace with actual data fetching
-  const mockResidents: Resident[] = [
-    {
-      id: '1',
-      name: 'Neon Tetra',
-      scientificName: 'Paracheirodon innesi',
-      images: [
-        'https://placehold.co/1200x800/3b82f6/ffffff?text=Neon+Tetra+1',
-        'https://placehold.co/1200x800/2563eb/ffffff?text=Neon+Tetra+2'
-      ],
-      dateAdded: '2020-06-15',
-      status: 'current',
-      notes: 'School of 10, very active and colorful'
-    },
-    {
-      id: '2',
-      name: 'Java Fern',
-      scientificName: 'Microsorum pteropus',
-      images: ['https://placehold.co/1200x800/10b981/ffffff?text=Java+Fern'],
-      dateAdded: '2020-05-20',
-      status: 'current',
-      notes: 'Low light, easy care plant'
-    },
-    {
-      id: '3',
-      name: 'Guppy',
-      scientificName: 'Poecilia reticulata',
-      images: [
-        'https://placehold.co/1200x800/f59e0b/ffffff?text=Guppy+1',
-        'https://placehold.co/1200x800/ea580c/ffffff?text=Guppy+2',
-        'https://placehold.co/1200x800/dc2626/ffffff?text=Guppy+3'
-      ],
-      dateAdded: '2019-08-10',
-      dateRemoved: '2021-03-15',
-      status: 'past',
-      notes: 'Colorful and active, bred successfully'
+  useEffect(() => {
+    const fetchResidents = async () => {
+      try {
+        const apiType = type === 'fish' ? 'fish' : 'plant'
+        const res = await fetch(api.fishtankResidents(apiType))
+        if (!res.ok) throw new Error('Failed to fetch')
+        const data: ApiResident[] = await res.json()
+        
+        // Transform API data to component format, filter to only visible (IsActive)
+        const transformed: Resident[] = data
+          .filter(r => r.IsActive !== false)
+          .map(r => ({
+            id: r.Id,
+            name: r.Name || r.Id,
+            scientificName: r.ScientificName,
+            images: (r.Images || []).map(img => cdn.fishtank(img)),
+            dateAdded: r.AddedDate || '',
+            status: r.Status || 'current',
+            quantity: r.Quantity,
+            notes: r.Notes,
+          }))
+        
+        // Sort: inhabitants by quantity (descending), plants alphabetically
+        if (apiType === 'fish') {
+          transformed.sort((a, b) => (b.quantity || 1) - (a.quantity || 1))
+        } else {
+          transformed.sort((a, b) => a.name.localeCompare(b.name))
+        }
+        
+        setResidents(transformed)
+      } catch (err) {
+        console.error('Failed to fetch residents:', err)
+        setResidents([])
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+    
+    fetchResidents()
+  }, [type])
 
-  // First filter by type
-  const residentsByType = mockResidents.filter(resident => {
-    if (type === 'fish') {
-      return resident.scientificName?.includes('Paracheirodon') || resident.scientificName?.includes('Poecilia')
-    } else {
-      return resident.scientificName?.includes('Microsorum')
-    }
-  })
-
-  // Then filter by current/past based on toggle
-  const filteredResidents = residentsByType.filter(resident => {
+  // Filter by current/past based on toggle
+  const filteredResidents = residents.filter(resident => {
     if (showPast) {
       return true
     }
     return resident.status === 'current'
   })
 
-  // Count current and past for this specific type
-  const currentCount = residentsByType.filter(r => r.status === 'current').length
-  const pastCount = residentsByType.filter(r => r.status === 'past').length
+  // Count current and past
+  const currentCount = residents.filter(r => r.status === 'current').length
+  const pastCount = residents.filter(r => r.status === 'past').length
 
   return (
     <section className="flex items-center justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-lg)]">
@@ -110,22 +121,30 @@ export default function ResidentSection({ title, type }: ResidentSectionProps) {
         </div>
 
         {/* Residents Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--spacing-lg)]">
-          {filteredResidents.map((resident) => (
-            <ResidentCard
-              key={resident.id}
-              resident={resident}
-              onClick={() => setSelectedResident(resident)}
-            />
-          ))}
-        </div>
-
-        {filteredResidents.length === 0 && (
+        {loading ? (
           <div className="text-center py-[var(--spacing-xl)]">
-            <p className="text-xl text-[var(--color-text-secondary)]">
-              No {showPast ? 'past' : 'current'} {title.toLowerCase()} to display
-            </p>
+            <p className="text-xl text-[var(--color-text-secondary)]">Loading...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--spacing-lg)]">
+              {filteredResidents.map((resident) => (
+                <ResidentCard
+                  key={resident.id}
+                  resident={resident}
+                  onClick={() => setSelectedResident(resident)}
+                />
+              ))}
+            </div>
+
+            {filteredResidents.length === 0 && (
+              <div className="text-center py-[var(--spacing-xl)]">
+                <p className="text-xl text-[var(--color-text-secondary)]">
+                  No {showPast ? 'past' : 'current'} {title.toLowerCase()} to display
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, Upload, Trash2, List, Grid, Loader2 } from 'lucide-react'
 import { api, cdn, fetchWithAuth } from '../config/api'
 
-export type ContentType = 'watches' | 'albums'
+export type ContentType = 'watches' | 'albums' | 'fishtank'
 
 interface ImageManagementModalProps {
   isOpen: boolean
@@ -64,6 +64,7 @@ export default function ImageManagementModal({
 
   // Fetch existing images from detail API
   // Both watches and albums now return { Thumbnail, Images } format
+  // Fishtank uses S3 directly via the public API
   const fetchImages = useCallback(async () => {
     try {
       let url: string
@@ -72,6 +73,50 @@ export default function ImageManagementModal({
         // Watches: identifier is "Brand/Model"
         const [brand, model] = identifier.split('/')
         url = api.watchDetail(brand, model)
+      } else if (contentType === 'fishtank') {
+        // Fishtank: identifier is "residents/type/id" or "timeline/id"
+        // Fetch from public API and find the specific item
+        const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+        const parts = identifier.split('/')
+        
+        if (parts[0] === 'residents' && parts.length === 3) {
+          // residents/fish/neon-tetra -> fetch /fishtank/residents?type=fish
+          const [, type, id] = parts
+          const res = await fetch(`${BASE_URL}/fishtank/residents?type=${type}`)
+          if (res.ok) {
+            const data = await res.json()
+            const item = data.find((r: { Id: string }) => r.Id === id)
+            if (item) {
+              setThumbnail(item.Thumbnail || null)
+              setImages((item.Images || []).map((key: string) => ({
+                name: key.split('/').pop() || key,
+                key
+              })))
+              return
+            }
+          }
+        } else if (parts[0] === 'timeline' && parts.length === 2) {
+          // timeline/event-id -> fetch /fishtank/timeline
+          const [, id] = parts
+          const res = await fetch(`${BASE_URL}/fishtank/timeline`)
+          if (res.ok) {
+            const data = await res.json()
+            const item = data.find((e: { Id: string }) => e.Id === id)
+            if (item) {
+              setThumbnail(item.Thumbnail || null)
+              setImages((item.Images || []).map((key: string) => ({
+                name: key.split('/').pop() || key,
+                key
+              })))
+              return
+            }
+          }
+        }
+        
+        // Fallback: no images found
+        setThumbnail(null)
+        setImages([])
+        return
       } else {
         // Albums: identifier is album name, use include_thumbnail=true
         url = api.albumWithThumbnail(identifier)
@@ -81,7 +126,7 @@ export default function ImageManagementModal({
       if (res.ok) {
         const data = await res.json()
         
-        // Both APIs return { Thumbnail, Images }
+        // All APIs return { Thumbnail, Images } or just Images array
         if (data.Thumbnail) {
           setThumbnail(data.Thumbnail)
         } else {
@@ -240,8 +285,15 @@ export default function ImageManagementModal({
   const processingCount = pendingFiles.length
   const thumbnailExists = thumbnail !== null
   
+  // Timeline doesn't need thumbnails - only main images
+  const showThumbnailSection = !identifier.startsWith('timeline/')
+  
   // Get CDN URL helper for this content type
-  const getCdnUrl = (path: string) => contentType === 'watches' ? cdn.watches(path) : cdn.albums(path)
+  const getCdnUrl = (path: string) => {
+    if (contentType === 'watches') return cdn.watches(path)
+    if (contentType === 'fishtank') return cdn.fishtank(path)
+    return cdn.albums(path)
+  }
   
   const pendingFilesTooltip = pendingFiles.length > 0 
     ? pendingFiles.map(f => `• ${f}`).join('\n') 
@@ -297,7 +349,8 @@ export default function ImageManagementModal({
           </div>
         ) : (
           <>
-            {/* Thumbnail Section */}
+            {/* Thumbnail Section - not shown for timeline */}
+            {showThumbnailSection && (
             <div className="mb-6">
               <h4 className="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">Thumbnail</h4>
               <input
@@ -341,6 +394,7 @@ export default function ImageManagementModal({
                 )}
               </div>
             </div>
+            )}
 
             {/* Images Section */}
             <div>

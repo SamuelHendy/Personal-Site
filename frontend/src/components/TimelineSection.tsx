@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import TimelineModal from './TimelineModal'
 import MobileTimelineModal from './MobileTimelineModal'
+import { api, cdn } from '../config/api'
 
 interface TimelineEvent {
   id: string
@@ -10,12 +11,26 @@ interface TimelineEvent {
   blurb: string
   description: string
   images: string[]
+  eventType?: string
+}
+
+interface ApiTimelineEvent {
+  Id: string
+  Date: string
+  Title: string
+  Description?: string
+  EventType?: string
+  IsHidden?: boolean
+  Images?: string[]
+  Thumbnail?: string
 }
 
 export default function TimelineSection() {
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [events, setEvents] = useState<TimelineEvent[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -24,49 +39,38 @@ export default function TimelineSection() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // TODO: Replace with actual data
-  const events: TimelineEvent[] = [
-    {
-      id: '1',
-      date: '2020-05-01',
-      title: 'Tank Setup',
-      blurb: 'Started the aquarium journey with initial setup',
-      description: 'Started the aquarium journey with initial setup and cycling. Spent weeks researching the nitrogen cycle and ensuring water parameters were stable before adding any livestock. Set up filtration, lighting, and basic hardscape. The process began with thoroughly cleaning the tank and all equipment with dechlorinated water. I carefully positioned the substrate, creating a gentle slope from back to front to add depth and improve the visual appeal. The hardscape was arranged using natural materials, including carefully selected pieces of driftwood and smooth river rocks. Each piece was positioned to create natural-looking caves and hiding spots for future inhabitants. The filtration system was installed with biological, mechanical, and chemical media to ensure optimal water quality. I chose a high-quality LED lighting system with adjustable spectrum and intensity to support future plant growth. The cycling process took approximately six weeks, during which I regularly tested ammonia, nitrite, and nitrate levels. I added beneficial bacteria supplements and monitored the temperature daily to maintain stability. Throughout this period, I documented water parameters in a detailed log and made adjustments as needed. The patience during this initial phase proved crucial for the long-term success of the aquarium.',
-      images: ['https://placehold.co/1200x800/2563eb/ffffff?text=Tank+Setup+1', 'https://placehold.co/1200x800/2563eb/ffffff?text=Tank+Setup+2']
-    },
-    {
-      id: '2',
-      date: '2020-08-15',
-      title: 'First Fish',
-      blurb: 'Added the first inhabitants after successful cycling',
-      description: 'Added the first inhabitants after successful cycling. Started with hardy species to ensure the biological filtration was fully established. Monitored water parameters daily and performed regular water changes to maintain stability.',
-      images: ['https://placehold.co/1200x800/059669/ffffff?text=First+Fish']
-    },
-    {
-      id: '3',
-      date: '2021-03-20',
-      title: 'Major Rescape',
-      blurb: 'Complete redesign with new hardscape and plants',
-      description: 'Complete redesign with new hardscape and plant layout. Removed all existing decorations and replanted with a focus on creating natural-looking aquascapes. Added driftwood and rocks to create hiding spots and visual interest.',
-      images: ['https://placehold.co/1200x800/dc2626/ffffff?text=Rescape+1', 'https://placehold.co/1200x800/dc2626/ffffff?text=Rescape+2', 'https://placehold.co/1200x800/dc2626/ffffff?text=Rescape+3']
-    },
-    {
-      id: '4',
-      date: '2022-01-10',
-      title: 'Equipment Upgrade',
-      blurb: 'Upgraded to canister filter and LED lighting',
-      description: 'Upgraded to canister filter and LED lighting system. The new equipment provided better filtration capacity and more control over the lighting spectrum. This upgrade significantly improved plant growth and water clarity.',
-      images: ['https://placehold.co/1200x800/7c3aed/ffffff?text=Equipment+Upgrade']
-    },
-    {
-      id: '5',
-      date: '2023-06-05',
-      title: 'Community Expansion',
-      blurb: 'Added new species to create a diverse community',
-      description: 'Added new species to create a diverse community tank. Carefully selected compatible species that occupy different levels of the aquarium. The community now includes schooling fish, bottom dwellers, and centerpiece fish that coexist peacefully.',
-      images: ['https://placehold.co/1200x800/ea580c/ffffff?text=Community+1', 'https://placehold.co/1200x800/ea580c/ffffff?text=Community+2']
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      try {
+        const res = await fetch(api.fishtankTimeline)
+        if (!res.ok) throw new Error('Failed to fetch')
+        const data: ApiTimelineEvent[] = await res.json()
+        
+        // Transform API data, filter hidden events, sort by date descending
+        const transformed: TimelineEvent[] = data
+          .filter(e => !e.IsHidden)
+          .map(e => ({
+            id: e.Id,
+            date: e.Date,
+            title: e.Title,
+            blurb: e.Description?.substring(0, 100) || '',
+            description: e.Description || '',
+            images: (e.Images || []).map(img => cdn.fishtank(img)),
+            eventType: e.EventType,
+          }))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        
+        setEvents(transformed)
+      } catch (err) {
+        console.error('Failed to fetch timeline:', err)
+        setEvents([])
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+    
+    fetchTimeline()
+  }, [])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -82,6 +86,15 @@ export default function TimelineSection() {
           </h2>
 
           {/* Timeline */}
+          {loading ? (
+            <div className="text-center py-[var(--spacing-xl)]">
+              <p className="text-xl text-[var(--color-text-secondary)]">Loading...</p>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-[var(--spacing-xl)]">
+              <p className="text-xl text-[var(--color-text-secondary)]">No timeline events yet</p>
+            </div>
+          ) : (
           <div className="relative">
             {/* Timeline line - solid for visible events */}
             <div className="absolute left-4 md:left-1/2 top-0 w-0.5 bg-[var(--color-text-primary)] rough-border" 
@@ -142,7 +155,7 @@ export default function TimelineSection() {
                           {event.blurb.length > 100 ? `${event.blurb.substring(0, 100)}...` : event.blurb}
                         </p>
                         <p className="text-xs text-[var(--color-text-secondary)] mt-3 italic">
-                          Click to view photos →
+                          {event.images.length > 0 ? 'Click to view photos →' : 'Read more →'}
                         </p>
                       </button>
                     </div>
@@ -175,6 +188,7 @@ export default function TimelineSection() {
               </button>
             </div>
           </div>
+          )}
         </div>
       </section>
 
