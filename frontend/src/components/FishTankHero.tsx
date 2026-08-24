@@ -6,11 +6,6 @@ import FadeImage from './FadeImage'
 
 const MOBILE_HERO_ASPECT = 11 / 5
 
-/** Maps linear scroll progress (0–1) to ease-in-out, matching CSS timing. */
-function easeInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
-
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -113,8 +108,7 @@ export default function FishTankHero() {
         Math.max(-track.getBoundingClientRect().top, 0),
         panDistance
       )
-      const easedPan = easeInOut(scrolledIntoTrack / panDistance) * panDistance
-      setTranslateX(-easedPan)
+      setTranslateX(-scrolledIntoTrack)
 
       if (specsRef.current) {
         const specsRect = specsRef.current.getBoundingClientRect()
