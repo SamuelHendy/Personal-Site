@@ -119,6 +119,12 @@ interface ApiData {
   max_ms: number
 }
 
+interface ApiErrorData {
+  endpoint: string
+  status: number
+  errors: number
+}
+
 interface SocialData {
   platform: string
   source: 'main' | 'qr'
@@ -140,6 +146,8 @@ export default function Dashboard() {
   const [pagesLoading, setPagesLoading] = useState(true)
   const [apiData, setApiData] = useState<ApiData[]>([])
   const [apiLoading, setApiLoading] = useState(true)
+  const [apiErrorsData, setApiErrorsData] = useState<ApiErrorData[]>([])
+  const [apiErrorsLoading, setApiErrorsLoading] = useState(true)
   const [socialData, setSocialData] = useState<SocialData[]>([])
   const [socialLoading, setSocialLoading] = useState(true)
 
@@ -223,6 +231,18 @@ export default function Dashboard() {
       .catch(() => {
         setApiData([])
         setApiLoading(false)
+      })
+
+    // Fetch API errors
+    fetchWithAuth(api.admin.metricsApiErrors(7))
+      .then(res => res.json())
+      .then(data => {
+        setApiErrorsData(Array.isArray(data) ? data : [])
+        setApiErrorsLoading(false)
+      })
+      .catch(() => {
+        setApiErrorsData([])
+        setApiErrorsLoading(false)
       })
 
     // Fetch social link clicks
@@ -421,8 +441,117 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Analytics charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* API Performance + API Errors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title text-lg">
+                  <Gauge className="w-5 h-5" />
+                  API Performance
+                </h2>
+                <p className="text-xs text-base-content/60 -mt-2">Last 7 days · 2xx/3xx only</p>
+                <div className="h-48">
+                  {apiLoading ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <span className="loading loading-spinner loading-md"></span>
+                    </div>
+                  ) : apiData.length === 0 ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <div className="text-center text-base-content/40">
+                        <Gauge className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No API data yet</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto h-full">
+                      <table className="table table-xs">
+                        <thead>
+                          <tr>
+                            <th>Endpoint</th>
+                            <th className="text-right">Reqs</th>
+                            <th className="text-right">Avg</th>
+                            <th className="text-right">Max</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apiData.slice(0, 8).map((endpoint, i) => (
+                            <tr key={i}>
+                              <td className="max-w-[140px]">
+                                <span
+                                  className="tooltip tooltip-top block truncate cursor-default before:max-w-xs before:whitespace-normal before:text-left"
+                                  data-tip={endpoint.endpoint}
+                                >
+                                  {endpoint.endpoint.replace('/api/', '')}
+                                </span>
+                              </td>
+                              <td className="text-right">{endpoint.requests}</td>
+                              <td className="text-right">{endpoint.avg_ms}ms</td>
+                              <td className="text-right text-warning">{endpoint.max_ms}ms</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title text-lg">
+                  <AlertTriangle className="w-5 h-5 text-error" />
+                  API Errors
+                </h2>
+                <p className="text-xs text-base-content/60 -mt-2">Last 7 days · 5xx on known routes</p>
+                <div className="h-48">
+                  {apiErrorsLoading ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <span className="loading loading-spinner loading-md"></span>
+                    </div>
+                  ) : apiErrorsData.length === 0 ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <div className="text-center text-base-content/40">
+                        <AlertTriangle className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No API errors</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto h-full">
+                      <table className="table table-xs">
+                        <thead>
+                          <tr>
+                            <th>Endpoint</th>
+                            <th className="text-right">Status</th>
+                            <th className="text-right">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apiErrorsData.slice(0, 8).map((item, i) => (
+                            <tr key={i}>
+                              <td className="max-w-[140px]">
+                                <span
+                                  className="tooltip tooltip-top block truncate cursor-default before:max-w-xs before:whitespace-normal before:text-left"
+                                  data-tip={item.endpoint}
+                                >
+                                  {item.endpoint.replace('/api/', '')}
+                                </span>
+                              </td>
+                              <td className="text-right text-error">{item.status}</td>
+                              <td className="text-right font-medium">{item.errors}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Popular pages + Social links */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Page popularity */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -516,60 +645,6 @@ export default function Dashboard() {
                           </div>
                         )
                       })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* API Performance */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title text-lg">
-                  <Gauge className="w-5 h-5" />
-                  API Performance
-                </h2>
-                <div className="h-40">
-                  {apiLoading ? (
-                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
-                      <span className="loading loading-spinner loading-md"></span>
-                    </div>
-                  ) : apiData.length === 0 ? (
-                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-base-content/40">
-                        <Gauge className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No API data yet</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto h-full">
-                      <table className="table table-xs">
-                        <thead>
-                          <tr>
-                            <th>Endpoint</th>
-                            <th className="text-right">Reqs</th>
-                            <th className="text-right">Avg</th>
-                            <th className="text-right">Max</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {apiData.slice(0, 5).map((endpoint, i) => (
-                            <tr key={i}>
-                              <td className="max-w-[120px]">
-                                <span
-                                  className="tooltip tooltip-top block truncate cursor-default before:max-w-xs before:whitespace-normal before:text-left"
-                                  data-tip={endpoint.endpoint}
-                                >
-                                  {endpoint.endpoint.replace('/api/', '')}
-                                </span>
-                              </td>
-                              <td className="text-right">{endpoint.requests}</td>
-                              <td className="text-right">{endpoint.avg_ms}ms</td>
-                              <td className="text-right text-warning">{endpoint.max_ms}ms</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                     </div>
                   )}
                 </div>

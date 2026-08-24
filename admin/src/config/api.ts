@@ -44,6 +44,7 @@ export const api = {
     metricsPages: `${BASE_URL}/admin/metrics?type=pages`,
     metricsSocial: (days: number = 30) => `${BASE_URL}/admin/metrics?type=social&days=${days}`,
     metricsApi: `${BASE_URL}/admin/metrics?type=api`,
+    metricsApiErrors: (days: number = 7) => `${BASE_URL}/admin/metrics?type=api-errors&days=${days}`,
   },
 }
 

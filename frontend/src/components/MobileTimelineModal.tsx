@@ -116,7 +116,7 @@ export default function MobileTimelineModal({ event, onClose }: MobileTimelineMo
               <FadeImage
                 src={image}
                 alt={`${event.title} - Image ${index + 1}`}
-                className="w-full h-full object-cover bg-image"
+                className="w-full h-full object-cover"
                 duration={300}
               />
             </div>

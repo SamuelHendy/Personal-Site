@@ -1,25 +1,65 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { api, cdn } from '../config/api'
 import FadeImage from './FadeImage'
 
+const MOBILE_HERO_ASPECT = 11 / 5
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setIsMobile(mq.matches)
+    mq.addEventListener('change', update)
+    update()
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  return isMobile
+}
+
+function measureRenderedImageWidth(img: HTMLImageElement, containerHeight: number): number {
+  if (img.naturalWidth > 0 && img.naturalHeight > 0 && containerHeight > 0) {
+    return (img.naturalWidth / img.naturalHeight) * containerHeight
+  }
+  return img.getBoundingClientRect().width
+}
+
 export default function FishTankHero() {
-  const [headerHeight, setHeaderHeight] = useState(0)
-  const [maxScroll, setMaxScroll] = useState(0)
-  const headerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const [viewportWidth, setViewportWidth] = useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth : 0)
+  )
+  const [viewportHeight, setViewportHeight] = useState(
+    () => (typeof window !== 'undefined' ? window.innerHeight : 0)
+  )
+  const panTrackRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const specsRef = useRef<HTMLDivElement>(null)
-  const [imageTransform, setImageTransform] = useState({ marginTop: 0, translateX: 0 })
-  const [isAnimating, setIsAnimating] = useState(false)
+  const [translateX, setTranslateX] = useState(0)
   const [specsSpacing, setSpecsSpacing] = useState(0)
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null)
   const [imageError, setImageError] = useState(false)
   const [heroLoaded, setHeroLoaded] = useState(false)
-  const [heroLoading, setHeroLoading] = useState(true) // Still fetching API
-  const [actualImageWidth, setActualImageWidth] = useState(0)
+  const [heroLoading, setHeroLoading] = useState(true)
+  const [renderedImageWidth, setRenderedImageWidth] = useState(0)
 
-  // Fetch active hero image
+  const panDistance = useMemo(() => {
+    if (!isMobile) return 0
+
+    const imageWidth = renderedImageWidth > 0
+      ? renderedImageWidth
+      : viewportHeight > 0
+        ? viewportHeight * MOBILE_HERO_ASPECT
+        : viewportWidth * MOBILE_HERO_ASPECT
+
+    return Math.max(0, imageWidth - viewportWidth)
+  }, [isMobile, renderedImageWidth, viewportWidth, viewportHeight])
+
   useEffect(() => {
     const fetchHero = async () => {
       try {
@@ -29,7 +69,6 @@ export default function FishTankHero() {
           if (data?.url) {
             setHeroImageUrl(cdn.fishtank(data.url))
           } else {
-            // No hero image, show gradient
             setHeroLoading(false)
             setHeroLoaded(true)
           }
@@ -47,195 +86,152 @@ export default function FishTankHero() {
   }, [])
 
   useEffect(() => {
-    // Measure header height
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight)
+    const onResize = () => {
+      setViewportWidth(window.innerWidth)
+      setViewportHeight(window.innerHeight)
     }
-    
-    // Calculate maxScroll after component mounts
-    const calculateMaxScroll = () => {
-      if (imageRef.current) {
-        const viewportWidth = window.innerWidth
-        // Use actual image width if available, otherwise estimate
-        const imageWidth = viewportWidth < 768 
-          ? (actualImageWidth > 0 ? actualImageWidth : viewportWidth * 3) 
-          : viewportWidth
-        setMaxScroll(Math.max(0, imageWidth - viewportWidth))
-      }
-    }
-    calculateMaxScroll()
-  }, [heroLoaded, actualImageWidth])
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   useEffect(() => {
+    if (!isMobile) return
+
     const handleScroll = () => {
-      if (!imageRef.current) return
-
-      const scrollY = window.scrollY
-      const viewportWidth = window.innerWidth
-      // Use actual image width if available, otherwise estimate
-      const imageWidth = viewportWidth < 768 
-        ? (actualImageWidth > 0 ? actualImageWidth : viewportWidth * 3) 
-        : viewportWidth
-      
-      // Calculate when animation should start and end
-      const animationStart = headerHeight
-      const maxScroll = imageWidth - viewportWidth // How much we need to scroll to see the full image
-      const animationEnd = animationStart + maxScroll
-
-      if (scrollY < animationStart) {
-        // Before animation starts - image in normal flow
-        setImageTransform({ marginTop: 0, translateX: 0 })
-        setIsAnimating(false)
-      } else if (scrollY >= animationStart && scrollY < animationEnd) {
-        // During animation - translate to pan
-        const scrollProgress = scrollY - animationStart
-        setImageTransform({ 
-          marginTop: scrollProgress, 
-          translateX: -scrollProgress 
-        })
-        setIsAnimating(true)
-      } else {
-        // After animation ends - keep final position
-        setImageTransform({ 
-          marginTop: maxScroll, 
-          translateX: -maxScroll 
-        })
-        setIsAnimating(false)
+      const track = panTrackRef.current
+      if (!track || panDistance === 0) {
+        setTranslateX(0)
+        return
       }
 
-      // Calculate scissor animation for specs
+      const scrolledIntoTrack = Math.min(
+        Math.max(-track.getBoundingClientRect().top, 0),
+        panDistance
+      )
+      setTranslateX(-scrolledIntoTrack)
+
       if (specsRef.current) {
         const specsRect = specsRef.current.getBoundingClientRect()
         const specsCenterY = specsRect.top + specsRect.height / 2
         const viewportCenterY = window.innerHeight / 2
-        
-        // Only animate when section is above center (approaching from top)
-        // Once centered or below, keep items at center (offset = 0)
+
         if (specsCenterY > viewportCenterY) {
-          // Section is above center - calculate distance
           const distanceFromCenter = (specsCenterY - viewportCenterY) / (window.innerHeight / 2)
           const normalizedDistance = Math.max(0, Math.min(1, distanceFromCenter))
-          
-          // Scissor effect: items slide from sides to center
-          // Movement is 20% of viewport width, at 1/2 scroll speed
-          const viewportWidth = window.innerWidth
-          const maxOffset = (viewportWidth * 0.2) / 2 // 20% of page width, divided by 2 for half-scroll speed
-          const offset = maxOffset * normalizedDistance
-          setSpecsSpacing(offset)
+          const maxOffset = (window.innerWidth * 0.2) / 2
+          setSpecsSpacing(maxOffset * normalizedDistance)
         } else {
-          // Section is at or below center - keep items centered
           setSpecsSpacing(0)
         }
       }
     }
 
-    window.addEventListener('scroll', handleScroll)
-    handleScroll() // Initial calculation
-    
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [headerHeight, actualImageWidth])
+  }, [panDistance, isMobile])
+
+  const mobilePanWidth = renderedImageWidth > 0
+    ? `${renderedImageWidth}px`
+    : `calc(100dvh * ${MOBILE_HERO_ASPECT})`
+
+  const mobileTranslateX = isMobile ? translateX : 0
 
   return (
     <>
-      {/* Header - separate from hero */}
-      <div ref={headerRef} className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-xl)]">
-        {/* Back button */}
+      <div className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-xl)]">
         <Link to="/" className="rough-border flex items-center gap-2 border border-transparent text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] transition-colors w-fit mb-[var(--spacing-md)]">
           <ChevronRight size={24} className="rotate-180 -translate-y-0.5" />
           <span className="font-bold">Back to Home</span>
         </Link>
 
-        {/* Title */}
         <h1 className="text-4xl md:text-6xl font-bold text-[var(--color-text-primary)] mb-[var(--spacing-lg)] text-printed">
           My Aquarium
         </h1>
       </div>
 
-      {/* Hero Section */}
       <section>
-        {/* Spacer before image - pushes content down when not animating */}
-        {!isAnimating && imageTransform.marginTop > 0 && (
-          <div style={{ height: `${imageTransform.marginTop}px` }}></div>
-        )}
-
-        {/* Hero Image with horizontal scroll animation (mobile only) */}
-        <div 
-          ref={imageRef}
-          className="overflow-hidden aspect-[11/5] bg-[var(--color-background)]"
-          style={{ 
-            height: window.innerWidth >= 768 ? 'auto' : '100vh',
-            width: '100vw',
-            position: window.innerWidth >= 768 ? 'relative' : (isAnimating ? 'sticky' : 'relative'),
-            top: window.innerWidth >= 768 ? 'auto' : (isAnimating ? 0 : 'auto')
+        {/* Pan track must be taller than the sticky hero by panDistance so the hero stays pinned for the full pan */}
+        <div
+          ref={panTrackRef}
+          style={{
+            height: isMobile && panDistance > 0 ? `calc(${panDistance}px + 100dvh)` : undefined,
           }}
         >
-          {heroImageUrl && !imageError ? (
-            <FadeImage 
-              src={heroImageUrl}
-              alt="Aquarium hero"
-              duration={500}
-              style={{ 
-                // On mobile: image height fills container, width is auto (maintains aspect ratio)
-                // This makes the image wider than viewport, allowing horizontal scroll
-                height: '100%',
-                width: window.innerWidth >= 768 ? '100%' : 'auto',
-                objectFit: window.innerWidth >= 768 ? 'cover' : 'none',
-                transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`
-              }}
-              onError={() => setImageError(true)}
-              onLoad={(e) => {
-                const img = e.currentTarget as HTMLImageElement
-                setActualImageWidth(img.offsetWidth)
-                setHeroLoading(false)
-                setHeroLoaded(true)
-              }}
-            />
-          ) : !heroLoading ? (
-            <div 
-              className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
-              style={{ 
-                width: window.innerWidth >= 768 ? '100%' : '300%',
-                transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`,
-                opacity: heroLoaded ? 1 : 0
-              }}
-            />
-          ) : null}
+          <div
+            ref={imageRef}
+            className="overflow-hidden bg-[var(--color-background)] md:aspect-[11/5] md:relative sticky top-0"
+            style={{
+              height: isMobile ? '100dvh' : 'auto',
+              width: '100vw',
+            }}
+          >
+            {heroImageUrl && !imageError ? (
+              <FadeImage
+                src={heroImageUrl}
+                alt="Aquarium hero"
+                duration={500}
+                className="block max-w-none"
+                style={{
+                  height: '100%',
+                  width: isMobile ? mobilePanWidth : '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'left center',
+                  transform: isMobile ? `translateX(${mobileTranslateX}px)` : undefined,
+                  willChange: isMobile ? 'transform' : undefined,
+                }}
+                onError={() => setImageError(true)}
+                onLoad={(e) => {
+                  const img = e.currentTarget as HTMLImageElement
+                  const containerHeight = e.currentTarget.parentElement?.clientHeight ?? viewportHeight
+                  setRenderedImageWidth(measureRenderedImageWidth(img, containerHeight))
+                  setHeroLoading(false)
+                  setHeroLoaded(true)
+                }}
+              />
+            ) : !heroLoading ? (
+              <div
+                className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
+                style={{
+                  width: isMobile ? mobilePanWidth : '100%',
+                  transform: isMobile ? `translateX(${mobileTranslateX}px)` : undefined,
+                  opacity: heroLoaded ? 1 : 0,
+                }}
+              />
+            ) : null}
+          </div>
         </div>
-
-        {/* Spacer for scroll distance during animation (mobile only) */}
-        {isAnimating && window.innerWidth < 768 && <div style={{ height: `${maxScroll}px` }}></div>}
 
         <div className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)] flex items-center justify-center">
           <div ref={specsRef} className="w-full max-w-[85%] mx-auto">
-            {/* Tank Specifications - Vertical on mobile, horizontal on desktop */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-[var(--spacing-md)] md:gap-[var(--spacing-xl)] text-rough">
-              <div 
+              <div
                 className="text-center py-[var(--spacing-md)]"
-                style={{ transform: window.innerWidth >= 768 ? 'none' : `translateX(-${specsSpacing}px)` }}
+                style={{ transform: isMobile ? `translateX(-${specsSpacing}px)` : undefined }}
               >
                 <h3 className="text-sm text-[var(--color-text-secondary)] mb-1">Tank Size</h3>
                 <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">240L</p>
               </div>
-              
-              <div 
+
+              <div
                 className="text-center py-[var(--spacing-md)]"
-                style={{ transform: window.innerWidth >= 768 ? 'none' : `translateX(${specsSpacing}px)` }}
+                style={{ transform: isMobile ? `translateX(${specsSpacing}px)` : undefined }}
               >
                 <h3 className="text-sm text-[var(--color-text-secondary)] mb-1">Water Type</h3>
                 <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">Freshwater</p>
               </div>
-              
-              <div 
+
+              <div
                 className="text-center py-[var(--spacing-md)]"
-                style={{ transform: window.innerWidth >= 768 ? 'none' : `translateX(-${specsSpacing}px)` }}
+                style={{ transform: isMobile ? `translateX(-${specsSpacing}px)` : undefined }}
               >
                 <h3 className="text-sm text-[var(--color-text-secondary)] mb-1">Tank Type</h3>
                 <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">Community</p>
               </div>
-              
-              <div 
+
+              <div
                 className="text-center py-[var(--spacing-md)]"
-                style={{ transform: window.innerWidth >= 768 ? 'none' : `translateX(${specsSpacing}px)` }}
+                style={{ transform: isMobile ? `translateX(${specsSpacing}px)` : undefined }}
               >
                 <h3 className="text-sm text-[var(--color-text-secondary)] mb-1">Started</h3>
                 <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">2020</p>

@@ -27,6 +27,24 @@ PAGE_ROUTE_FILTER = """
 """
 
 
+# Known API route prefixes for error/performance metrics (ignore scanner noise on random /api/* paths).
+# Keep in sync with routes in api_gateway.tf when adding new endpoints.
+API_ROUTE_FILTER = """
+      AND (
+        cs_uri_stem = '/api/health'
+        OR cs_uri_stem = '/api/albums'
+        OR cs_uri_stem LIKE '/api/albums/%'
+        OR cs_uri_stem = '/api/recently-updated'
+        OR cs_uri_stem = '/api/watches'
+        OR cs_uri_stem LIKE '/api/watches/%'
+        OR cs_uri_stem LIKE '/api/fishtank/%'
+        OR cs_uri_stem LIKE '/api/social/%'
+        OR cs_uri_stem LIKE '/api/config/%'
+        OR cs_uri_stem LIKE '/api/admin/%'
+      )
+"""
+
+
 def get_athena_client():
     global _athena
     if _athena is None:
@@ -236,7 +254,7 @@ def get_social_clicks(days: int = 30) -> list:
 
 def get_api_performance() -> list:
     """Get API endpoint performance stats."""
-    query = """
+    query = f"""
     SELECT 
         cs_uri_stem as endpoint,
         COUNT(*) as requests,
@@ -246,6 +264,7 @@ def get_api_performance() -> list:
     WHERE date >= CURRENT_DATE - INTERVAL '7' DAY
       AND cs_uri_stem LIKE '/api/%'
       AND sc_status >= 200 AND sc_status < 400
+      {API_ROUTE_FILTER}
     GROUP BY cs_uri_stem
     ORDER BY requests DESC
     LIMIT 10
@@ -266,6 +285,37 @@ def get_api_performance() -> list:
         return []
 
 
+def get_api_errors(days: int = 7) -> list:
+    """Get 5xx error counts by known API endpoint."""
+    query = f"""
+    SELECT
+        cs_uri_stem as endpoint,
+        sc_status as status,
+        COUNT(*) as errors
+    FROM cloudfront_logs
+    WHERE date >= CURRENT_DATE - INTERVAL '{days}' DAY
+      AND sc_status >= 500
+      {API_ROUTE_FILTER}
+    GROUP BY cs_uri_stem, sc_status
+    ORDER BY errors DESC
+    LIMIT 10
+    """
+    try:
+        results = execute_query(query)
+        return [
+            {
+                'endpoint': r['endpoint'],
+                'status': int(r['status']),
+                'errors': int(r['errors']),
+            }
+            for r in results
+            if r.get('endpoint')
+        ]
+    except Exception as e:
+        logger.warning(f"Failed to get API errors: {e}")
+        return []
+
+
 def lambda_handler(event, context):
     """
     Lambda handler for metrics API.
@@ -275,6 +325,7 @@ def lambda_handler(event, context):
     GET /api/admin/metrics?type=pages - Returns popular pages
     GET /api/admin/metrics?type=social - Returns social link click counts
     GET /api/admin/metrics?type=api - Returns API performance
+    GET /api/admin/metrics?type=api-errors - Returns 5xx counts by API endpoint
     """
     try:
         # Parse query parameters
@@ -304,6 +355,10 @@ def lambda_handler(event, context):
         elif metric_type == 'api':
             data = get_api_performance()
             cache_ttl = 900  # 15 minutes for API stats
+        elif metric_type == 'api-errors':
+            days = int(params.get('days', 7))
+            data = get_api_errors(days)
+            cache_ttl = 900  # 15 minutes for API errors
         else:
             return {
                 'statusCode': 400,

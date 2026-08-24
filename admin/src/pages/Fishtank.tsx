@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, Fish, Calendar, Pencil, Trash2, Loader2, X, Leaf, Image, Eye, EyeOff, ImageIcon, Upload } from 'lucide-react'
 import { api, fetchWithAuth, cdn } from '../config/api'
+import { inferImageContentType, uploadApiError } from '../lib/imageUpload'
 import ImageManagementModalGeneric from '../components/ImageManagementModal.generic'
 
 interface HeroImage {
@@ -204,24 +205,25 @@ export default function Fishtank() {
     setHeroUploading(true)
     try {
       for (const file of Array.from(files)) {
+        const contentType = inferImageContentType(file)
         const res = await fetchWithAuth(api.admin.imageUpload, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             path: 'fishtank/hero',
             filename: file.name,
-            contentType: file.type,
+            contentType,
             isThumbnail: false,
             lossless: false
           })
         })
-        if (!res.ok) throw new Error('Failed to get upload URL')
+        if (!res.ok) throw await uploadApiError(res, 'Failed to get upload URL')
         const { uploadUrl } = await res.json()
         
         const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           body: file,
-          headers: { 'Content-Type': file.type }
+          headers: { 'Content-Type': contentType }
         })
         if (!uploadRes.ok) throw new Error('Failed to upload file')
       }
