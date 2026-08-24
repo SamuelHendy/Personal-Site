@@ -8,6 +8,15 @@ locals {
   lambda_memory    = 256
   placeholder_zip  = "${path.module}/templates/lambda/placeholder.zip"
   placeholder_hash = filebase64sha256("${path.module}/templates/lambda/placeholder.zip")
+
+  # Platform slug -> HTTPS destination for GET /api/social/{platform}
+  social_map = {
+    linkedin  = "https://www.linkedin.com/in/samuel-hendy-958773179/"
+    github    = "https://github.com/SamuelHendy"
+    instagram = "https://instagram.com/sam.hendy_"
+    unsplash  = "https://unsplash.com/@samuel_h"
+    spotify   = "https://open.spotify.com/user/21yl4qbxlvja34wdtqyrs5zpy"
+  }
 }
 
 # Health check lambda
@@ -423,6 +432,34 @@ resource "aws_lambda_function" "admin_fishtank_hero" {
   tags = merge(local.common_tags, {
     Name     = "personal-api-admin-fishtank-hero"
     Function = "Admin Fishtank Hero Management"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}
+
+# Social passthrough redirect lambda (public)
+resource "aws_lambda_function" "social_redirect" {
+  function_name = "personal-api-social-redirect"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      SOCIAL_MAP_JSON = jsonencode(local.social_map)
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-social-redirect"
+    Function = "Social link passthrough redirects"
   })
 
   lifecycle {

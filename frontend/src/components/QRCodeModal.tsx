@@ -2,15 +2,14 @@ import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, X } from 'lucide-react'
+import { api } from '../config/api'
 
 interface QRCodeModalProps {
   instagramHandle?: string
-  linkedinHandle?: string
 }
 
 export default function QRCodeModal({ 
   instagramHandle = 'samhendy', 
-  linkedinHandle = 'samhendy' 
 }: QRCodeModalProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -80,7 +79,7 @@ export default function QRCodeModal({
                 <div className="w-full flex flex-col gap-3">
                   {/* Instagram */}
                   <a
-                    href={`https://instagram.com/${instagramHandle}`}
+                    href={api.social('instagram', { m: 'true' })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-text-primary)] rough-border hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors"
@@ -93,7 +92,7 @@ export default function QRCodeModal({
 
                   {/* LinkedIn */}
                   <a
-                    href={`https://linkedin.com/in/${linkedinHandle}`}
+                    href={api.social('linkedin', { m: 'true' })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-text-primary)] rough-border hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] transition-colors"

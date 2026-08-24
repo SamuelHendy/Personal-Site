@@ -38,6 +38,7 @@ from personal_api_admin_fishtank_hero.handler import lambda_handler as admin_fis
 from personal_api_config.handler import lambda_handler as config_handler
 from personal_api_image_upload.handler import lambda_handler as image_upload_handler
 from personal_api_image_status.handler import lambda_handler as image_status_handler
+from personal_api_social_redirect.handler import lambda_handler as social_redirect_handler
 
 # Mock metrics handler for local dev (Athena not available locally)
 def mock_metrics_handler(event, context):
@@ -69,6 +70,16 @@ def mock_metrics_handler(event, context):
             {'page': '/watches', 'views': 320},
             {'page': '/albums', 'views': 280},
             {'page': '/fishtank', 'views': 150},
+        ]
+    elif metric_type == 'social':
+        data = [
+            {'platform': 'linkedin', 'source': 'main', 'clicks': 42},
+            {'platform': 'instagram', 'source': 'qr', 'clicks': 28},
+            {'platform': 'instagram', 'source': 'main', 'clicks': 10},
+            {'platform': 'github', 'source': 'main', 'clicks': 15},
+            {'platform': 'linkedin', 'source': 'qr', 'clicks': 12},
+            {'platform': 'spotify', 'source': 'main', 'clicks': 9},
+            {'platform': 'unsplash', 'source': 'main', 'clicks': 4},
         ]
     elif metric_type == 'api':
         data = [
@@ -105,12 +116,18 @@ def invoke_lambda(handler, path_params=None, body=None):
     }
     
     result = handler(event, None)
-    
+
+    headers = result.get('headers') or {}
     response = app.response_class(
         response=result.get('body', ''),
         status=result.get('statusCode', 200),
-        mimetype='application/json'
     )
+    for key, value in headers.items():
+        response.headers[key] = value
+    if 'Content-Type' in headers:
+        response.mimetype = headers['Content-Type'].split(';')[0]
+    elif result.get('statusCode', 200) != 302:
+        response.mimetype = 'application/json'
     return response
 
 
@@ -162,6 +179,11 @@ def fishtank_timeline():
 @app.route('/fishtank/hero', methods=['GET'])
 def fishtank_hero():
     return invoke_lambda(fishtank_hero_handler)
+
+
+@app.route('/social/<platform>', methods=['GET'])
+def social_redirect(platform):
+    return invoke_lambda(social_redirect_handler, path_params={'platform': platform})
 
 
 # Admin routes (no auth in dev mode)

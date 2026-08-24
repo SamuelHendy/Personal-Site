@@ -10,6 +10,12 @@ export const cdn = {
 }
 
 export const api = {
+  social: (platform: string, params?: Record<string, string>) => {
+    const url = `${BASE_URL}/social/${platform}`
+    if (!params || Object.keys(params).length === 0) return url
+    return `${url}?${new URLSearchParams(params).toString()}`
+  },
+
   // Public APIs (same as frontend)
   albums: `${BASE_URL}/albums`,
   album: (name: string) => `${BASE_URL}/albums/${name}`,
@@ -36,6 +42,7 @@ export const api = {
     metrics: `${BASE_URL}/admin/metrics`,
     metricsTraffic: (days: number) => `${BASE_URL}/admin/metrics?type=traffic&days=${days}`,
     metricsPages: `${BASE_URL}/admin/metrics?type=pages`,
+    metricsSocial: (days: number = 30) => `${BASE_URL}/admin/metrics?type=social&days=${days}`,
     metricsApi: `${BASE_URL}/admin/metrics?type=api`,
   },
 }

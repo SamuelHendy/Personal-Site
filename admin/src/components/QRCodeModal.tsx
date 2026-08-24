@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { api } from '../config/api'
 
 interface QRCodeModalProps {
   websiteUrl?: string
   instagramHandle?: string
-  linkedinHandle?: string
   // vCard fields
   firstName?: string
   lastName?: string
@@ -20,7 +20,6 @@ interface QRCodeModalProps {
 export default function QRCodeModal({ 
   websiteUrl = 'https://samhendy.com',
   instagramHandle = 'sam.hendy_', 
-  linkedinHandle = 'samuel-hendy-958773179',
   firstName = 'Samuel',
   lastName = 'Hendy',
   email = 'samuel@hedgehill.uk',
@@ -128,7 +127,7 @@ export default function QRCodeModal({
               <div className="w-full flex flex-col gap-3">
                 {/* Instagram */}
                 <a
-                  href={`https://instagram.com/${instagramHandle}`}
+                  href={api.social('instagram', { m: 'true' })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"
@@ -141,7 +140,7 @@ export default function QRCodeModal({
 
                 {/* LinkedIn */}
                 <a
-                  href={`https://linkedin.com/in/${linkedinHandle}`}
+                  href={api.social('linkedin', { m: 'true' })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"

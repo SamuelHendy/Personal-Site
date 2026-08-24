@@ -19,4 +19,9 @@ export const api = {
   fishtankTimeline: `${BASE_URL}/fishtank/timeline`,
   fishtankHero: `${BASE_URL}/fishtank/hero`,
   config: (configType: string, configKey: string) => `${BASE_URL}/config/${configType}/${configKey}`,
+  social: (platform: string, params?: Record<string, string>) => {
+    const url = `${BASE_URL}/social/${platform}`
+    if (!params || Object.keys(params).length === 0) return url
+    return `${url}?${new URLSearchParams(params).toString()}`
+  },
 }

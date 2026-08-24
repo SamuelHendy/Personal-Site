@@ -233,6 +233,28 @@ resource "aws_apigatewayv2_route" "fishtank_hero" {
   target    = "integrations/${aws_apigatewayv2_integration.fishtank_hero.id}"
 }
 
+# Social passthrough redirect
+resource "aws_lambda_permission" "social_redirect" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.social_redirect.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "social_redirect" {
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.social_redirect.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "social_redirect" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/social/{platform}"
+  target    = "integrations/${aws_apigatewayv2_integration.social_redirect.id}"
+}
+
 # Public Config Lambda (read-only)
 resource "aws_lambda_permission" "config" {
   statement_id  = "AllowAPIGateway"
