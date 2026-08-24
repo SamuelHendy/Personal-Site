@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>404 — Page Not Found | Samuel Hendy</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --color-background: #ffffff;
+        --color-text-primary: #0a0a0a;
+        --color-text-secondary: #525252;
+        --font-sans: 'Special Elite', 'Courier New', Courier, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-background: #040101;
+          --color-text-primary: #ffffff;
+          --color-text-secondary: #e5e5e5;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem 2rem;
+        font-family: var(--font-sans);
+        background-color: var(--color-background);
+        color: var(--color-text-primary);
+      }
+
+      .container {
+        width: 100%;
+        max-width: 40rem;
+        text-align: center;
+      }
+
+      .text-printed {
+        filter: url('#roughen-mobile') contrast(1.1);
+        letter-spacing: 0.03em;
+        text-shadow:
+          0.5px 0.5px 0 rgba(0, 0, 0, 0.2),
+          -0.5px -0.5px 0 rgba(0, 0, 0, 0.15);
+      }
+
+      @media (min-width: 768px) {
+        .text-printed {
+          filter: url('#roughen-tablet') contrast(1.1);
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .text-printed {
+          filter: url('#roughen-1080p') contrast(1.1);
+        }
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+        font-size: clamp(4.5rem, 18vw, 8rem);
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      h2 {
+        margin: 0 0 1rem;
+        font-size: clamp(1.5rem, 4vw, 1.875rem);
+        font-weight: 700;
+      }
+
+      p {
+        margin: 0 0 3rem;
+        font-size: 1.125rem;
+        color: var(--color-text-secondary);
+      }
+
+      .home-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid var(--color-text-primary);
+        background: var(--color-background);
+        color: var(--color-text-primary);
+        text-decoration: none;
+        font-weight: 700;
+        filter: url('#rough-border-mobile');
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+
+      .home-link:hover {
+        background: var(--color-text-primary);
+        color: var(--color-background);
+      }
+
+      @media (min-width: 768px) {
+        .home-link {
+          filter: url('#rough-border-tablet');
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .home-link {
+          filter: url('#rough-border-1080p');
+        }
+      }
+
+      .chevron {
+        width: 1.5rem;
+        height: 1.5rem;
+        transform: rotate(180deg) translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+      <defs>
+        <filter id="roughen-mobile">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-tablet">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-1080p">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="rough-border-mobile">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.3" />
+        </filter>
+        <filter id="rough-border-tablet">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" />
+        </filter>
+        <filter id="rough-border-1080p">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6" />
+        </filter>
+      </defs>
+    </svg>
+
+    <main class="container">
+      <h1 class="text-printed">404</h1>
+      <h2 class="text-printed">Page Not Found</h2>
+      <p>The page you are looking for doesn't exist or has been moved.</p>
+      <a class="home-link" href="/">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+        <span>Back to Home</span>
+      </a>
+    </main>
+  </body>
+</html>

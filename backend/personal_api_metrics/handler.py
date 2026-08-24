@@ -104,12 +104,12 @@ def get_unique_visitors_today() -> int:
 
 
 def get_errors_24h() -> int:
-    """Get error count (4xx, 5xx) in last 24 hours."""
+    """Get server error count (5xx only) in last 24 hours."""
     query = """
     SELECT COUNT(*) as count
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '1' DAY
-      AND sc_status >= 400
+      AND sc_status >= 500
     """
     try:
         results = execute_query(query)
@@ -205,7 +205,7 @@ def get_api_performance() -> list:
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '7' DAY
       AND cs_uri_stem LIKE '/api/%'
-      AND sc_status < 500
+      AND sc_status >= 200 AND sc_status < 400
     GROUP BY cs_uri_stem
     ORDER BY requests DESC
     LIMIT 10
