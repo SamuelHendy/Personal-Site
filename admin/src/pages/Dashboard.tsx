@@ -121,6 +121,7 @@ interface ApiData {
 
 interface SocialData {
   platform: string
+  source: 'main' | 'qr'
   clicks: number
 }
 
@@ -496,13 +497,14 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="space-y-2 overflow-y-auto h-full pr-2">
-                      {socialData.slice(0, 5).map((item, i) => {
+                      {socialData.slice(0, 8).map((item, i) => {
                         const maxClicks = Math.max(...socialData.map(s => s.clicks), 1)
                         const widthPercent = (item.clicks / maxClicks) * 100
+                        const label = item.source === 'qr' ? `${item.platform} (QR)` : item.platform
                         return (
                           <div key={i} className="flex items-center gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs truncate mb-1 capitalize">{item.platform}</div>
+                              <div className="text-xs truncate mb-1 capitalize">{label}</div>
                               <div className="h-4 bg-base-200 rounded overflow-hidden">
                                 <div
                                   className="h-full bg-secondary/80 rounded"

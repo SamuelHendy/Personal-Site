@@ -127,7 +127,7 @@ export default function QRCodeModal({
               <div className="w-full flex flex-col gap-3">
                 {/* Instagram */}
                 <a
-                  href={api.social('instagram')}
+                  href={api.social('instagram', { m: 'true' })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"
@@ -140,7 +140,7 @@ export default function QRCodeModal({
 
                 {/* LinkedIn */}
                 <a
-                  href={api.social('linkedin')}
+                  href={api.social('linkedin', { m: 'true' })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"

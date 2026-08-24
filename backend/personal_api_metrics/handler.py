@@ -202,22 +202,30 @@ def get_popular_pages(limit: int = 10) -> list:
 
 
 def get_social_clicks(days: int = 30) -> list:
-    """Get social passthrough click counts by platform."""
+    """Get social passthrough click counts by platform and source (main nav vs QR modal)."""
     query = f"""
     SELECT
         regexp_extract(cs_uri_stem, '/api/social/([^/?]+)', 1) as platform,
+        CASE
+            WHEN cs_uri_query LIKE '%m=true%' THEN 'qr'
+            ELSE 'main'
+        END as source,
         COUNT(*) as clicks
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '{days}' DAY
       AND cs_uri_stem LIKE '/api/social/%'
       AND sc_status >= 300 AND sc_status < 400
-    GROUP BY 1
+    GROUP BY 1, 2
     ORDER BY clicks DESC
     """
     try:
         results = execute_query(query)
         return [
-            {'platform': r['platform'], 'clicks': int(r['clicks'])}
+            {
+                'platform': r['platform'],
+                'source': r['source'],
+                'clicks': int(r['clicks']),
+            }
             for r in results
             if r.get('platform')
         ]

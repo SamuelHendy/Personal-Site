@@ -73,11 +73,13 @@ def mock_metrics_handler(event, context):
         ]
     elif metric_type == 'social':
         data = [
-            {'platform': 'linkedin', 'clicks': 42},
-            {'platform': 'instagram', 'clicks': 38},
-            {'platform': 'github', 'clicks': 15},
-            {'platform': 'spotify', 'clicks': 9},
-            {'platform': 'unsplash', 'clicks': 4},
+            {'platform': 'linkedin', 'source': 'main', 'clicks': 42},
+            {'platform': 'instagram', 'source': 'qr', 'clicks': 28},
+            {'platform': 'instagram', 'source': 'main', 'clicks': 10},
+            {'platform': 'github', 'source': 'main', 'clicks': 15},
+            {'platform': 'linkedin', 'source': 'qr', 'clicks': 12},
+            {'platform': 'spotify', 'source': 'main', 'clicks': 9},
+            {'platform': 'unsplash', 'source': 'main', 'clicks': 4},
         ]
     elif metric_type == 'api':
         data = [
