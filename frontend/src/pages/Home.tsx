@@ -9,7 +9,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <QRCodeModal instagramHandle="sam.hendy_" linkedinHandle="samuel-hendy-958773179" />
+      <QRCodeModal instagramHandle="sam.hendy_" />
       <Hero />
       <MainNav pageEnabled={pageEnabled} />
       <Feature pageEnabled={pageEnabled} />

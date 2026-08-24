@@ -6,7 +6,6 @@ import { api } from '../config/api'
 interface QRCodeModalProps {
   websiteUrl?: string
   instagramHandle?: string
-  linkedinHandle?: string
   // vCard fields
   firstName?: string
   lastName?: string
@@ -21,7 +20,6 @@ interface QRCodeModalProps {
 export default function QRCodeModal({ 
   websiteUrl = 'https://samhendy.com',
   instagramHandle = 'sam.hendy_', 
-  linkedinHandle = 'samuel-hendy-958773179',
   firstName = 'Samuel',
   lastName = 'Hendy',
   email = 'samuel@hedgehill.uk',

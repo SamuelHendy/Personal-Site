@@ -6,12 +6,10 @@ import { api } from '../config/api'
 
 interface QRCodeModalProps {
   instagramHandle?: string
-  linkedinHandle?: string
 }
 
 export default function QRCodeModal({ 
   instagramHandle = 'samhendy', 
-  linkedinHandle = 'samhendy' 
 }: QRCodeModalProps) {
   const [isOpen, setIsOpen] = useState(false)
 
