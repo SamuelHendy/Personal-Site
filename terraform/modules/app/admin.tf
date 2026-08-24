@@ -8,17 +8,24 @@ resource "aws_cloudfront_function" "admin_rewrite" {
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
-      
-      // Handle /admin/ root
-      if (uri === '/admin' || uri === '/admin/') {
-        request.uri = '/admin/index.html';
+
+      // Static assets (e.g. /admin/assets/index.js)
+      if (uri.includes('.')) {
+        return request;
       }
-      // Handle SPA routing - if no file extension, serve admin index.html
-      else if (!uri.includes('.')) {
+
+      // Known admin SPA routes only — unknown paths return 404 (not index.html)
+      var isAdminRoot = uri === '/admin' || uri === '/admin/';
+      var isAdminRoute = uri === '/admin/watches'
+        || uri === '/admin/fishtank'
+        || uri === '/admin/albums';
+
+      if (isAdminRoot || isAdminRoute) {
         request.uri = '/admin/index.html';
+        return request;
       }
-      // Otherwise serve the file as-is (e.g. /admin/assets/index.js)
-      
+
+      // Unknown admin route — pass through to S3 (403). CloudFront serves /404.html with 404 status.
       return request;
     }
   EOF
@@ -48,16 +55,24 @@ resource "aws_cloudfront_function" "spa_rewrite" {
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
-      
-      // Handle root
-      if (uri === '/') {
-        request.uri = '/index.html';
+
+      // Static assets (e.g. /assets/index.js, /favicon.ico)
+      if (uri.includes('.')) {
+        return request;
       }
-      // Handle SPA routing - if no file extension, serve index.html
-      else if (!uri.includes('.')) {
+
+      // Known public SPA routes only — unknown paths return 404 (not index.html)
+      var isRoot = uri === '/';
+      var isAlbums = uri === '/albums' || uri.startsWith('/albums/');
+      var isWatches = uri === '/watches';
+      var isFishtank = uri === '/fishtank';
+
+      if (isRoot || isAlbums || isWatches || isFishtank) {
         request.uri = '/index.html';
+        return request;
       }
-      
+
+      // Unknown route — pass through to S3 (403). CloudFront serves /404.html with 404 status.
       return request;
     }
   EOF

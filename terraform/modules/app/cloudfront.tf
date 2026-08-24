@@ -74,6 +74,21 @@ resource "aws_cloudfront_distribution" "main" {
     prefix          = "cloudfront/"
   }
 
+  # S3 returns 403 for missing keys (OAC). Serve styled static 404.html with a real 404 status.
+  custom_error_response {
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 60
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 60
+  }
+
   viewer_certificate {
     acm_certificate_arn            = var.domain_name != null ? aws_acm_certificate.cloudfront[0].arn : null
     ssl_support_method             = var.domain_name != null ? "sni-only" : null
