@@ -36,7 +36,7 @@ export default function Hero() {
         {/* Text Box - Top Left with Parallax */}
         <motion.div 
           style={{ y, opacity }}
-          className="rough-border absolute -top-25 -left-[10px] md:top-0 md:-left-[17%] border border-[var(--color-text-primary)] p-[var(--spacing-md)] md:p-[var(--spacing-lg)] mt-0 md:mt-[var(--spacing-2xl)] ml-0 md:ml-[var(--spacing-md)] bg-transparent dark:bg-[rgba(0,0,0,0.25)]"
+          className="rough-border absolute -top-25 -left-[10px] md:top-0 md:-left-[17%] border border-[var(--color-text-primary)] p-[var(--spacing-md)] md:p-[var(--spacing-lg)] mt-0 md:mt-[var(--spacing-2xl)] ml-0 md:ml-[var(--spacing-md)] bg-transparent dark:bg-[rgba(4,1,1,0.25)]"
         >
           <h1 className="text-2xl md:text-4xl font-bold text-[var(--color-text-primary)] mb-[var(--spacing-sm)] text-printed">
             Samuel Hendy
