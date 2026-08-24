@@ -785,7 +785,7 @@ export default function Fishtank() {
                         <tr key={hero.key} className={hero.isActive ? 'bg-success/10' : ''}>
                           <td>
                             <img 
-                              src={cdn.fishtank(hero.key.replace('hero/', ''))} 
+                              src={cdn.fishtank(hero.key)} 
                               alt={hero.displayName}
                               className="w-16 h-10 object-cover rounded"
                             />
