@@ -31,15 +31,13 @@ function measureRenderedImageWidth(img: HTMLImageElement, containerHeight: numbe
 
 export default function FishTankHero() {
   const isMobile = useIsMobile()
-  const [headerHeight, setHeaderHeight] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth : 0)
   )
-  const headerRef = useRef<HTMLDivElement>(null)
+  const panTrackRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const specsRef = useRef<HTMLDivElement>(null)
-  const [imageTransform, setImageTransform] = useState({ marginTop: 0, translateX: 0 })
-  const [isAnimating, setIsAnimating] = useState(false)
+  const [translateX, setTranslateX] = useState(0)
   const [specsSpacing, setSpecsSpacing] = useState(0)
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null)
   const [imageError, setImageError] = useState(false)
@@ -86,18 +84,6 @@ export default function FishTankHero() {
   }, [])
 
   useEffect(() => {
-    const header = headerRef.current
-    if (!header) return
-
-    const measureHeader = () => setHeaderHeight(header.offsetHeight)
-    measureHeader()
-
-    const observer = new ResizeObserver(measureHeader)
-    observer.observe(header)
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
@@ -105,35 +91,22 @@ export default function FishTankHero() {
 
   useEffect(() => {
     if (!isMobile) {
-      setImageTransform({ marginTop: 0, translateX: 0 })
-      setIsAnimating(false)
+      setTranslateX(0)
       return
     }
 
     const handleScroll = () => {
-      if (!imageRef.current) return
-
-      const scrollY = window.scrollY
-      const animationStart = headerHeight
-      const animationEnd = animationStart + panDistance
-
-      if (scrollY < animationStart) {
-        setImageTransform({ marginTop: 0, translateX: 0 })
-        setIsAnimating(false)
-      } else if (scrollY >= animationStart && scrollY < animationEnd) {
-        const scrollProgress = scrollY - animationStart
-        setImageTransform({
-          marginTop: scrollProgress,
-          translateX: -scrollProgress,
-        })
-        setIsAnimating(true)
-      } else {
-        setImageTransform({
-          marginTop: panDistance,
-          translateX: -panDistance,
-        })
-        setIsAnimating(false)
+      const track = panTrackRef.current
+      if (!track || panDistance === 0) {
+        setTranslateX(0)
+        return
       }
+
+      const scrolledIntoTrack = Math.min(
+        Math.max(-track.getBoundingClientRect().top, 0),
+        panDistance
+      )
+      setTranslateX(-scrolledIntoTrack)
 
       if (specsRef.current) {
         const specsRect = specsRef.current.getBoundingClientRect()
@@ -154,7 +127,7 @@ export default function FishTankHero() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [headerHeight, panDistance, isMobile])
+  }, [panDistance, isMobile])
 
   const mobilePanWidth = renderedImageWidth > 0
     ? `${renderedImageWidth}px`
@@ -162,7 +135,7 @@ export default function FishTankHero() {
 
   return (
     <>
-      <div ref={headerRef} className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-xl)]">
+      <div className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] pt-[var(--spacing-xl)]">
         <Link to="/" className="rough-border flex items-center gap-2 border border-transparent text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] transition-colors w-fit mb-[var(--spacing-md)]">
           <ChevronRight size={24} className="rotate-180 -translate-y-0.5" />
           <span className="font-bold">Back to Home</span>
@@ -174,58 +147,54 @@ export default function FishTankHero() {
       </div>
 
       <section>
-        {!isAnimating && imageTransform.marginTop > 0 && (
-          <div style={{ height: `${imageTransform.marginTop}px` }} aria-hidden />
-        )}
-
+        {/* Pan track: its height creates scroll room; sticky hero pans inside it */}
         <div
-          ref={imageRef}
-          className="overflow-hidden bg-[var(--color-background)] md:aspect-[11/5]"
-          style={{
-            height: isMobile ? '100dvh' : 'auto',
-            width: '100vw',
-            position: isMobile && isAnimating ? 'sticky' : 'relative',
-            top: isMobile && isAnimating ? 0 : 'auto',
-          }}
+          ref={panTrackRef}
+          style={{ height: isMobile && panDistance > 0 ? `${panDistance}px` : undefined }}
         >
-          {heroImageUrl && !imageError ? (
-            <FadeImage
-              src={heroImageUrl}
-              alt="Aquarium hero"
-              duration={500}
-              className="block max-w-none"
-              style={{
-                height: isMobile ? '100%' : '100%',
-                width: isMobile ? mobilePanWidth : '100%',
-                objectFit: isMobile ? 'cover' : 'cover',
-                objectPosition: 'left center',
-                transform: isMobile ? `translateX(${imageTransform.translateX}px)` : undefined,
-                willChange: isMobile ? 'transform' : undefined,
-              }}
-              onError={() => setImageError(true)}
-              onLoad={(e) => {
-                const img = e.currentTarget as HTMLImageElement
-                const containerHeight = imageRef.current?.clientHeight ?? 0
-                setRenderedImageWidth(measureRenderedImageWidth(img, containerHeight))
-                setHeroLoading(false)
-                setHeroLoaded(true)
-              }}
-            />
-          ) : !heroLoading ? (
-            <div
-              className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
-              style={{
-                width: isMobile ? mobilePanWidth : '100%',
-                transform: isMobile ? `translateX(${imageTransform.translateX}px)` : undefined,
-                opacity: heroLoaded ? 1 : 0,
-              }}
-            />
-          ) : null}
+          <div
+            ref={imageRef}
+            className="overflow-hidden bg-[var(--color-background)] md:aspect-[11/5] md:relative sticky top-0"
+            style={{
+              height: isMobile ? '100dvh' : 'auto',
+              width: '100vw',
+            }}
+          >
+            {heroImageUrl && !imageError ? (
+              <FadeImage
+                src={heroImageUrl}
+                alt="Aquarium hero"
+                duration={500}
+                className="block max-w-none"
+                style={{
+                  height: '100%',
+                  width: isMobile ? mobilePanWidth : '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'left center',
+                  transform: isMobile ? `translateX(${translateX}px)` : undefined,
+                  willChange: isMobile ? 'transform' : undefined,
+                }}
+                onError={() => setImageError(true)}
+                onLoad={(e) => {
+                  const img = e.currentTarget as HTMLImageElement
+                  const containerHeight = imageRef.current?.clientHeight ?? 0
+                  setRenderedImageWidth(measureRenderedImageWidth(img, containerHeight))
+                  setHeroLoading(false)
+                  setHeroLoaded(true)
+                }}
+              />
+            ) : !heroLoading ? (
+              <div
+                className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
+                style={{
+                  width: isMobile ? mobilePanWidth : '100%',
+                  transform: isMobile ? `translateX(${translateX}px)` : undefined,
+                  opacity: heroLoaded ? 1 : 0,
+                }}
+              />
+            ) : null}
+          </div>
         </div>
-
-        {isMobile && panDistance > 0 && (
-          <div style={{ height: `${panDistance}px` }} aria-hidden />
-        )}
 
         <div className="px-[var(--spacing-md)] md:px-[var(--spacing-lg)] py-[var(--spacing-xl)] flex items-center justify-center">
           <div ref={specsRef} className="w-full max-w-[85%] mx-auto">
