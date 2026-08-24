@@ -147,10 +147,12 @@ export default function FishTankHero() {
       </div>
 
       <section>
-        {/* Pan track: its height creates scroll room; sticky hero pans inside it */}
+        {/* Pan track must be taller than the sticky hero by panDistance so the hero stays pinned for the full pan */}
         <div
           ref={panTrackRef}
-          style={{ height: isMobile && panDistance > 0 ? `${panDistance}px` : undefined }}
+          style={{
+            height: isMobile && panDistance > 0 ? `calc(${panDistance}px + 100dvh)` : undefined,
+          }}
         >
           <div
             ref={imageRef}
