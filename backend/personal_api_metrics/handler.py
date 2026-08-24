@@ -205,7 +205,7 @@ def get_api_performance() -> list:
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '7' DAY
       AND cs_uri_stem LIKE '/api/%'
-      AND sc_status < 500
+      AND sc_status >= 200 AND sc_status < 400
     GROUP BY cs_uri_stem
     ORDER BY requests DESC
     LIMIT 10
