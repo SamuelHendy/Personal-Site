@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, Upload, Trash2, List, Grid, Loader2 } from 'lucide-react'
 import { api, cdn, fetchWithAuth } from '../config/api'
+import { inferImageContentType, uploadApiError } from '../lib/imageUpload'
 
 export type ContentType = 'watches' | 'albums' | 'fishtank'
 
@@ -187,21 +188,21 @@ export default function ImageManagementModal({
     setUploading(true)
     try {
       for (const file of Array.from(files)) {
+        const contentType = inferImageContentType(file)
         const res = await fetchWithAuth(api.admin.imageUpload, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             path,
             filename: file.name,
-            contentType: file.type,
+            contentType,
             isThumbnail,
             lossless: useLossless
           })
         })
 
         if (!res.ok) {
-          const err = await res.json()
-          throw new Error(err.error || 'Failed to get upload URL')
+          throw await uploadApiError(res, 'Failed to get upload URL')
         }
 
         const { uploadUrl } = await res.json()
@@ -209,7 +210,7 @@ export default function ImageManagementModal({
         const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           body: file,
-          headers: { 'Content-Type': file.type }
+          headers: { 'Content-Type': contentType }
         })
 
         if (!uploadRes.ok) {
