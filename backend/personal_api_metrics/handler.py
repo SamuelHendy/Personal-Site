@@ -14,6 +14,18 @@ ATHENA_DATABASE = os.environ.get('ATHENA_DATABASE', 'personal_site_analytics')
 ATHENA_WORKGROUP = os.environ.get('ATHENA_WORKGROUP', 'personal-site-analytics')
 ATHENA_OUTPUT_BUCKET = os.environ.get('ATHENA_OUTPUT_BUCKET', 'shendy-personal-site-athena-results')
 
+# Public SPA route allowlist for Popular Pages metrics.
+# Keep in sync with aws_cloudfront_function.spa_rewrite in admin.tf when adding new frontend routes.
+PAGE_ROUTE_FILTER = """
+      AND (
+        cs_uri_stem = '/'
+        OR cs_uri_stem = '/albums'
+        OR cs_uri_stem LIKE '/albums/%'
+        OR cs_uri_stem = '/watches'
+        OR cs_uri_stem = '/fishtank'
+      )
+"""
+
 
 def get_athena_client():
     global _athena
@@ -172,13 +184,8 @@ def get_popular_pages(limit: int = 10) -> list:
     WHERE date >= CURRENT_DATE - INTERVAL '7' DAY
       AND cs_uri_stem NOT LIKE '/api/%'
       AND cs_uri_stem NOT LIKE '/cdn/%'
-      AND cs_uri_stem NOT LIKE '%.js'
-      AND cs_uri_stem NOT LIKE '%.css'
-      AND cs_uri_stem NOT LIKE '%.ico'
-      AND cs_uri_stem NOT LIKE '%.png'
-      AND cs_uri_stem NOT LIKE '%.jpg'
-      AND cs_uri_stem NOT LIKE '%.webp'
       AND sc_status < 400
+      {PAGE_ROUTE_FILTER}
     GROUP BY cs_uri_stem
     ORDER BY views DESC
     LIMIT {limit}

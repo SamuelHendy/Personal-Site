@@ -46,7 +46,9 @@ resource "aws_cloudfront_function" "admin_redirect" {
   EOF
 }
 
-# CloudFront Function for main site SPA routing
+# CloudFront Function for main site SPA routing.
+# Route allowlist — update when adding new public pages (also update PAGE_ROUTE_FILTER in
+# backend/personal_api_metrics/handler.py so Popular Pages metrics stay in sync).
 resource "aws_cloudfront_function" "spa_rewrite" {
   name    = "spa-path-rewrite"
   runtime = "cloudfront-js-2.0"
@@ -61,7 +63,8 @@ resource "aws_cloudfront_function" "spa_rewrite" {
         return request;
       }
 
-      // Known public SPA routes only — unknown paths return 404 (not index.html)
+      // Known public SPA routes only — unknown paths return 404 (not index.html).
+      // Keep in sync with PAGE_ROUTE_FILTER in backend/personal_api_metrics/handler.py.
       var isRoot = uri === '/';
       var isAlbums = uri === '/albums' || uri.startsWith('/albums/');
       var isWatches = uri === '/watches';
