@@ -430,8 +430,13 @@ export default function Dashboard() {
                         return (
                           <div key={i} className="flex items-center gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs truncate mb-1" title={page.page}>
-                                {page.page === '/' ? 'Home' : page.page}
+                              <div className="text-xs truncate mb-1">
+                                <span
+                                  className="tooltip tooltip-top block truncate cursor-default before:max-w-xs before:whitespace-normal before:text-left"
+                                  data-tip={page.page}
+                                >
+                                  {page.page === '/' ? 'Home' : page.page}
+                                </span>
                               </div>
                               <div className="h-4 bg-base-200 rounded overflow-hidden">
                                 <div 
@@ -483,8 +488,13 @@ export default function Dashboard() {
                         <tbody>
                           {apiData.slice(0, 5).map((endpoint, i) => (
                             <tr key={i}>
-                              <td className="truncate max-w-[120px]" title={endpoint.endpoint}>
-                                {endpoint.endpoint.replace('/api/', '')}
+                              <td className="max-w-[120px]">
+                                <span
+                                  className="tooltip tooltip-top block truncate cursor-default before:max-w-xs before:whitespace-normal before:text-left"
+                                  data-tip={endpoint.endpoint}
+                                >
+                                  {endpoint.endpoint.replace('/api/', '')}
+                                </span>
                               </td>
                               <td className="text-right">{endpoint.requests}</td>
                               <td className="text-right">{endpoint.avg_ms}ms</td>
