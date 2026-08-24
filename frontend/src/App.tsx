@@ -32,7 +32,7 @@ function App() {
       <DataProvider>
         <Router>
           <ScrollToTop />
-          <div className="min-h-screen bg-black">
+          <div className="min-h-screen bg-inherit">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/albums" element={<Albums />} />

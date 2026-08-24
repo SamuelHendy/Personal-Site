@@ -19,6 +19,7 @@
 
       @media (prefers-color-scheme: dark) {
         :root {
+          color-scheme: dark;
           --color-background: #040101;
           --color-text-primary: #ffffff;
           --color-text-secondary: #e5e5e5;
@@ -87,32 +88,40 @@
       }
 
       .home-link {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
         padding: 0.75rem 1.5rem;
-        border: 1px solid var(--color-text-primary);
-        background: var(--color-background);
+        background-color: var(--color-background);
         color: var(--color-text-primary);
         text-decoration: none;
         font-weight: 700;
-        filter: url('#rough-border-mobile');
         transition: background-color 0.2s ease, color 0.2s ease;
       }
 
+      /* Rough border on frame only — keeps fill at theme off-black, not filter-darkened black */
+      .home-link-frame {
+        position: absolute;
+        inset: 0;
+        border: 1px solid var(--color-text-primary);
+        filter: url('#rough-border-mobile');
+        pointer-events: none;
+      }
+
       .home-link:hover {
-        background: var(--color-text-primary);
+        background-color: var(--color-text-primary);
         color: var(--color-background);
       }
 
       @media (min-width: 768px) {
-        .home-link {
+        .home-link-frame {
           filter: url('#rough-border-tablet');
         }
       }
 
       @media (min-width: 1280px) {
-        .home-link {
+        .home-link-frame {
           filter: url('#rough-border-1080p');
         }
       }
@@ -159,6 +168,7 @@
       <h2 class="text-printed">Page Not Found</h2>
       <p>The page you are looking for doesn't exist or has been moved.</p>
       <a class="home-link" href="/">
+        <span class="home-link-frame" aria-hidden="true"></span>
         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="m9 18 6-6-6-6" />
         </svg>
