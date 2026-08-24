@@ -190,13 +190,29 @@ resource "aws_iam_role_policy" "lambda_admin_s3_content" {
         Effect = "Allow"
         Action = [
           "s3:DeleteObject",
-          "s3:GetObject"
+          "s3:GetObject",
+          "s3:PutObject"
         ]
         Resource = [
           "arn:aws:s3:::${var.watches_bucket_name}/*",
           "arn:aws:s3:::${var.albums_bucket_name}/*",
           "arn:aws:s3:::${var.fishtank_bucket_name}/*"
         ]
+      },
+      {
+        Sid    = "ContentBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.fishtank_bucket_name}"
+        ]
+        Condition = {
+          StringLike = {
+            "s3:prefix" = ["hero/*"]
+          }
+        }
       }
     ]
   })
