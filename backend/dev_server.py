@@ -87,6 +87,11 @@ def mock_metrics_handler(event, context):
             {'endpoint': '/api/albums', 'requests': 380, 'avg_ms': 42.1, 'max_ms': 95.3},
             {'endpoint': '/api/health', 'requests': 200, 'avg_ms': 5.1, 'max_ms': 15.0},
         ]
+    elif metric_type == 'api-errors':
+        data = [
+            {'endpoint': '/api/admin/images/upload', 'status': 500, 'errors': 3},
+            {'endpoint': '/api/admin/fishtank/hero', 'status': 502, 'errors': 1},
+        ]
     else:
         return {'statusCode': 400, 'body': json.dumps({'error': f'Unknown type: {metric_type}'})}
     
