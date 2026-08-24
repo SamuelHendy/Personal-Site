@@ -34,6 +34,9 @@ export default function FishTankHero() {
   const [viewportWidth, setViewportWidth] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth : 0)
   )
+  const [viewportHeight, setViewportHeight] = useState(
+    () => (typeof window !== 'undefined' ? window.innerHeight : 0)
+  )
   const panTrackRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const specsRef = useRef<HTMLDivElement>(null)
@@ -48,15 +51,14 @@ export default function FishTankHero() {
   const panDistance = useMemo(() => {
     if (!isMobile) return 0
 
-    const containerHeight = imageRef.current?.clientHeight ?? 0
     const imageWidth = renderedImageWidth > 0
       ? renderedImageWidth
-      : containerHeight > 0
-        ? containerHeight * MOBILE_HERO_ASPECT
+      : viewportHeight > 0
+        ? viewportHeight * MOBILE_HERO_ASPECT
         : viewportWidth * MOBILE_HERO_ASPECT
 
     return Math.max(0, imageWidth - viewportWidth)
-  }, [isMobile, renderedImageWidth, viewportWidth, heroLoaded])
+  }, [isMobile, renderedImageWidth, viewportWidth, viewportHeight])
 
   useEffect(() => {
     const fetchHero = async () => {
@@ -84,16 +86,16 @@ export default function FishTankHero() {
   }, [])
 
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth)
+    const onResize = () => {
+      setViewportWidth(window.innerWidth)
+      setViewportHeight(window.innerHeight)
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
   useEffect(() => {
-    if (!isMobile) {
-      setTranslateX(0)
-      return
-    }
+    if (!isMobile) return
 
     const handleScroll = () => {
       const track = panTrackRef.current
@@ -132,6 +134,8 @@ export default function FishTankHero() {
   const mobilePanWidth = renderedImageWidth > 0
     ? `${renderedImageWidth}px`
     : `calc(100dvh * ${MOBILE_HERO_ASPECT})`
+
+  const mobileTranslateX = isMobile ? translateX : 0
 
   return (
     <>
@@ -173,13 +177,13 @@ export default function FishTankHero() {
                   width: isMobile ? mobilePanWidth : '100%',
                   objectFit: 'cover',
                   objectPosition: 'left center',
-                  transform: isMobile ? `translateX(${translateX}px)` : undefined,
+                  transform: isMobile ? `translateX(${mobileTranslateX}px)` : undefined,
                   willChange: isMobile ? 'transform' : undefined,
                 }}
                 onError={() => setImageError(true)}
                 onLoad={(e) => {
                   const img = e.currentTarget as HTMLImageElement
-                  const containerHeight = imageRef.current?.clientHeight ?? 0
+                  const containerHeight = e.currentTarget.parentElement?.clientHeight ?? viewportHeight
                   setRenderedImageWidth(measureRenderedImageWidth(img, containerHeight))
                   setHeroLoading(false)
                   setHeroLoaded(true)
@@ -190,7 +194,7 @@ export default function FishTankHero() {
                 className="h-full bg-gradient-to-r from-green-600 via-blue-500 to-orange-400 transition-opacity duration-500"
                 style={{
                   width: isMobile ? mobilePanWidth : '100%',
-                  transform: isMobile ? `translateX(${translateX}px)` : undefined,
+                  transform: isMobile ? `translateX(${mobileTranslateX}px)` : undefined,
                   opacity: heroLoaded ? 1 : 0,
                 }}
               />
