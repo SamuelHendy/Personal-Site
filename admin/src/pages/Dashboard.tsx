@@ -291,11 +291,11 @@ export default function Dashboard() {
               <div className="stat-figure text-error">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <div className="stat-title">Errors</div>
+              <div className="stat-title">Server Errors</div>
               <div className="stat-value text-error text-2xl">
                 {metricsLoading ? '...' : (metrics?.errors24h ?? 0)}
               </div>
-              <div className="stat-desc">Last 24h</div>
+              <div className="stat-desc">5xx, last 24h</div>
             </div>
             <div className="stat">
               <div className="stat-figure text-success">
