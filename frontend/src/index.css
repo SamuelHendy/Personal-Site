@@ -67,6 +67,8 @@ body.hide-scrollbar {
 
 /* Color variables that change based on theme */
 :root {
+  color-scheme: light;
+
   /* Light mode colors (default) */
   --color-primary: #3b82f6;
   --color-secondary: #8b5cf6;
@@ -87,13 +89,15 @@ body.hide-scrollbar {
 /* Dark mode colors */
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
+
     --color-primary: #3b82f6;
     --color-secondary: #8b5cf6;
     --color-accent: #ec4899;
     
-    --color-background: #000000;
-    --color-surface: #0a0a0a;
-    --color-surface-elevated: #1a1a1a;
+    --color-background: #040101;
+    --color-surface: #060202;
+    --color-surface-elevated: #0c0404;
     
     --color-text-primary: #ffffff;
     --color-text-secondary: #e5e5e5;
@@ -104,14 +108,25 @@ body.hide-scrollbar {
   }
 }
 
-/* Base styles */
+/* Base styles — single background source on html, everything else inherits */
+html {
+  background-color: var(--color-background);
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-background);
+  background-color: inherit;
   color: var(--color-text-primary);
+  min-height: 100%;
   overscroll-behavior: none;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100%;
+  background-color: inherit;
 }
 
 /* Cursor styles for clickable elements */
@@ -249,12 +264,12 @@ a, button, [role="button"] {
 
   /* Apply grayscale filter only to background/hero images */
   .bg-image {
-    filter: grayscale(100%) brightness(0.8);
+    filter: grayscale(100%) brightness(0.8) sepia(15%) hue-rotate(-30deg) saturate(1.2);
   }
 
   /* Album covers: grayscale by default, color on parent hover */
   .album-cover {
-    filter: grayscale(100%) brightness(0.8);
+    filter: grayscale(100%) brightness(0.8) sepia(15%) hue-rotate(-30deg) saturate(1.2);
     transition: filter 0.3s ease;
   }
 

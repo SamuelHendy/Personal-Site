@@ -30,7 +30,7 @@ export default function Feature({ pageEnabled }: FeatureProps) {
   const leftImageX = useTransform(scrollYProgress, [0, 1], [-30, 30])
 
   return (
-    <section ref={ref} className="min-h-screen md:h-screen flex flex-col justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] relative overflow-visible py-[var(--spacing-xl)] md:py-0">
+    <section ref={ref} className="min-h-screen md:h-screen flex flex-col justify-center px-[var(--spacing-md)] md:px-[var(--spacing-lg)] relative overflow-visible py-[var(--spacing-xl)] md:py-0 bg-[var(--color-background)]">
       <div className="w-full max-w-full md:max-w-[85%] mx-auto flex flex-col" style={{ minHeight: '80vh' }}>
         
         {/* Title */}
@@ -47,7 +47,7 @@ export default function Feature({ pageEnabled }: FeatureProps) {
             [1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rough-border aspect-square w-full max-w-[250px] border border-[var(--color-text-primary)] bg-[var(--color-surface)] relative overflow-hidden"
+                className="rough-border aspect-square w-full max-w-[250px] border border-[var(--color-text-primary)] bg-[var(--color-background)] relative overflow-hidden"
               >
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-2xl text-[var(--color-text-secondary)]">...</span>
@@ -63,7 +63,7 @@ export default function Feature({ pageEnabled }: FeatureProps) {
                 className={`w-full md:max-w-[250px] block ${pageEnabled.albums === false ? 'cursor-not-allowed' : ''}`}
               >
                 {/* Border div with rough effect */}
-                <div className="rough-border border border-[var(--color-text-primary)] p-2 aspect-square"></div>
+                <div className="rough-border border border-[var(--color-text-primary)] p-2 aspect-square bg-[var(--color-background)]"></div>
                 {/* Image content div overlaid on top with negative margin */}
                 <div className="-mt-[100%] p-2">
                   <DirectionAwareHover
@@ -101,25 +101,49 @@ export default function Feature({ pageEnabled }: FeatureProps) {
           <div className="w-full md:w-[60%] ml-0 md:-ml-[35%]">
             <div className="flex items-center gap-[var(--spacing-md)] relative z-10">
               {/* Card - Landscape, overlapping 1/3 into photo */}
-              <div
-                className="flex-1 rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] min-h-[200px] md:min-h-[250px] flex flex-col md:flex-row md:max-w-[66vw]"
-              >
-                <div className="flex-1 p-[var(--spacing-md)] md:p-[var(--spacing-xl)] flex flex-col justify-center">
-                  <h3 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-[var(--spacing-sm)] md:mb-[var(--spacing-md)] text-printed">
-                    My Aquarium
-                  </h3>
-                  <p className="text-sm md:text-base text-[var(--color-text-secondary)]">
-                    A journey through my planted community tank - from setup to current residents, plants, and future plans.
-                  </p>
+              {/* On mobile: clickable link to fishtank. On desktop: static card (button is separate) */}
+              {pageEnabled.fishtank ? (
+                <Link
+                  to="/fishtank"
+                  className="md:pointer-events-none flex-1 rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] min-h-[200px] md:min-h-[250px] flex flex-col md:flex-row md:max-w-[66vw] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-background)] md:hover:bg-[var(--color-background)] md:hover:text-[var(--color-text-primary)] transition-colors group"
+                >
+                  <div className="flex-1 p-[var(--spacing-md)] md:p-[var(--spacing-xl)] flex flex-col justify-center">
+                    <h3 className="text-2xl md:text-3xl font-bold mb-[var(--spacing-sm)] md:mb-[var(--spacing-md)] text-printed">
+                      My Aquarium
+                    </h3>
+                    <p className="text-sm md:text-base text-[var(--color-text-secondary)] group-hover:text-inherit md:group-hover:text-[var(--color-text-secondary)]">
+                      A journey through my planted community tank - from setup to current residents, plants, and future plans.
+                    </p>
+                  </div>
+                  <div className="w-full md:w-1/3 h-48 md:h-full overflow-hidden">
+                    <img 
+                      src="/images/featured/IMG_7976_web.webp" 
+                      alt="Project detail"
+                      className="bg-image w-full h-full object-cover"
+                    />
+                  </div>
+                </Link>
+              ) : (
+                <div
+                  className="flex-1 rough-border border border-[var(--color-text-primary)] bg-[var(--color-background)] min-h-[200px] md:min-h-[250px] flex flex-col md:flex-row md:max-w-[66vw] opacity-40 cursor-not-allowed"
+                >
+                  <div className="flex-1 p-[var(--spacing-md)] md:p-[var(--spacing-xl)] flex flex-col justify-center">
+                    <h3 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-[var(--spacing-sm)] md:mb-[var(--spacing-md)] text-printed line-through">
+                      My Aquarium
+                    </h3>
+                    <p className="text-sm md:text-base text-[var(--color-text-secondary)]">
+                      A journey through my planted community tank - from setup to current residents, plants, and future plans.
+                    </p>
+                  </div>
+                  <div className="w-full md:w-1/3 h-48 md:h-full overflow-hidden">
+                    <img 
+                      src="/images/featured/IMG_7976_web.webp" 
+                      alt="Project detail"
+                      className="bg-image w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
-                <div className="w-full md:w-1/3 h-48 md:h-full overflow-hidden">
-                  <img 
-                    src="/images/featured/IMG_7976_web.webp" 
-                    alt="Project detail"
-                    className="bg-image w-full h-full object-cover"
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Right Button - Desktop only, narrow, matches card height */}
               <motion.div style={{ x: buttonX, willChange: 'transform' }} className="hidden md:block self-stretch -z-10">

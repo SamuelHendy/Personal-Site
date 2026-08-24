@@ -17,6 +17,7 @@ export default function FishTankHero() {
   const [imageError, setImageError] = useState(false)
   const [heroLoaded, setHeroLoaded] = useState(false)
   const [heroLoading, setHeroLoading] = useState(true) // Still fetching API
+  const [actualImageWidth, setActualImageWidth] = useState(0)
 
   // Fetch active hero image
   useEffect(() => {
@@ -52,12 +53,18 @@ export default function FishTankHero() {
     }
     
     // Calculate maxScroll after component mounts
-    if (imageRef.current) {
-      const viewportWidth = window.innerWidth
-      const imageWidth = imageRef.current.scrollWidth || viewportWidth * 3
-      setMaxScroll(imageWidth - viewportWidth)
+    const calculateMaxScroll = () => {
+      if (imageRef.current) {
+        const viewportWidth = window.innerWidth
+        // Use actual image width if available, otherwise estimate
+        const imageWidth = viewportWidth < 768 
+          ? (actualImageWidth > 0 ? actualImageWidth : viewportWidth * 3) 
+          : viewportWidth
+        setMaxScroll(Math.max(0, imageWidth - viewportWidth))
+      }
     }
-  }, [])
+    calculateMaxScroll()
+  }, [heroLoaded, actualImageWidth])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,7 +72,10 @@ export default function FishTankHero() {
 
       const scrollY = window.scrollY
       const viewportWidth = window.innerWidth
-      const imageWidth = imageRef.current.scrollWidth // Full width of the image (300% of viewport)
+      // Use actual image width if available, otherwise estimate
+      const imageWidth = viewportWidth < 768 
+        ? (actualImageWidth > 0 ? actualImageWidth : viewportWidth * 3) 
+        : viewportWidth
       
       // Calculate when animation should start and end
       const animationStart = headerHeight
@@ -123,7 +133,7 @@ export default function FishTankHero() {
     handleScroll() // Initial calculation
     
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [headerHeight])
+  }, [headerHeight, actualImageWidth])
 
   return (
     <>
@@ -151,7 +161,7 @@ export default function FishTankHero() {
         {/* Hero Image with horizontal scroll animation (mobile only) */}
         <div 
           ref={imageRef}
-          className="overflow-hidden aspect-[11/5] bg-black"
+          className="overflow-hidden aspect-[11/5] bg-[var(--color-background)]"
           style={{ 
             height: window.innerWidth >= 768 ? 'auto' : '100vh',
             width: '100vw',
@@ -163,14 +173,19 @@ export default function FishTankHero() {
             <FadeImage 
               src={heroImageUrl}
               alt="Aquarium hero"
-              className="h-full object-cover"
               duration={500}
               style={{ 
-                width: window.innerWidth >= 768 ? '100%' : '300%',
+                // On mobile: image height fills container, width is auto (maintains aspect ratio)
+                // This makes the image wider than viewport, allowing horizontal scroll
+                height: '100%',
+                width: window.innerWidth >= 768 ? '100%' : 'auto',
+                objectFit: window.innerWidth >= 768 ? 'cover' : 'none',
                 transform: window.innerWidth >= 768 ? 'none' : `translateX(${imageTransform.translateX}px)`
               }}
               onError={() => setImageError(true)}
-              onLoad={() => {
+              onLoad={(e) => {
+                const img = e.currentTarget as HTMLImageElement
+                setActualImageWidth(img.offsetWidth)
                 setHeroLoading(false)
                 setHeroLoaded(true)
               }}
