@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Fish, Image, TrendingUp, Users, Eye, AlertTriangle, Gauge, BarChart3, Check, X, Minus, Power } from 'lucide-react'
+import { Clock, Fish, Image, TrendingUp, Users, Eye, AlertTriangle, Gauge, BarChart3, Share2, Check, X, Minus, Power } from 'lucide-react'
 import { api, fetchWithAuth } from '../config/api'
 import QRCodeModal from '../components/QRCodeModal'
 
@@ -119,6 +119,11 @@ interface ApiData {
   max_ms: number
 }
 
+interface SocialData {
+  platform: string
+  clicks: number
+}
+
 export default function Dashboard() {
   const [watchCount, setWatchCount] = useState<number | null>(null)
   const [albumCount, setAlbumCount] = useState<number | null>(null)
@@ -134,6 +139,8 @@ export default function Dashboard() {
   const [pagesLoading, setPagesLoading] = useState(true)
   const [apiData, setApiData] = useState<ApiData[]>([])
   const [apiLoading, setApiLoading] = useState(true)
+  const [socialData, setSocialData] = useState<SocialData[]>([])
+  const [socialLoading, setSocialLoading] = useState(true)
 
   useEffect(() => {
     // Fetch watch count
@@ -215,6 +222,18 @@ export default function Dashboard() {
       .catch(() => {
         setApiData([])
         setApiLoading(false)
+      })
+
+    // Fetch social link clicks
+    fetchWithAuth(api.admin.metricsSocial(30))
+      .then(res => res.json())
+      .then(data => {
+        setSocialData(Array.isArray(data) ? data : [])
+        setSocialLoading(false)
+      })
+      .catch(() => {
+        setSocialData([])
+        setSocialLoading(false)
       })
   }, [])
 
@@ -401,8 +420,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Two column charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Analytics charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* Page popularity */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -446,6 +465,52 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <span className="text-xs font-medium w-12 text-right">{page.views}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Social link clicks */}
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title text-lg">
+                  <Share2 className="w-5 h-5" />
+                  Social Links
+                </h2>
+                <p className="text-xs text-base-content/60 -mt-2">Last 30 days</p>
+                <div className="h-40">
+                  {socialLoading ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <span className="loading loading-spinner loading-md"></span>
+                    </div>
+                  ) : socialData.length === 0 ? (
+                    <div className="h-full bg-base-200 rounded-lg flex items-center justify-center">
+                      <div className="text-center text-base-content/40">
+                        <Share2 className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No social clicks yet</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 overflow-y-auto h-full pr-2">
+                      {socialData.slice(0, 5).map((item, i) => {
+                        const maxClicks = Math.max(...socialData.map(s => s.clicks), 1)
+                        const widthPercent = (item.clicks / maxClicks) * 100
+                        return (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs truncate mb-1 capitalize">{item.platform}</div>
+                              <div className="h-4 bg-base-200 rounded overflow-hidden">
+                                <div
+                                  className="h-full bg-secondary/80 rounded"
+                                  style={{ width: `${widthPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                            <span className="text-xs font-medium w-12 text-right">{item.clicks}</span>
                           </div>
                         )
                       })}

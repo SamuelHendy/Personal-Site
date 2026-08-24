@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { api } from '../config/api'
 
 interface QRCodeModalProps {
   websiteUrl?: string
@@ -128,7 +129,7 @@ export default function QRCodeModal({
               <div className="w-full flex flex-col gap-3">
                 {/* Instagram */}
                 <a
-                  href={`https://instagram.com/${instagramHandle}`}
+                  href={api.social('instagram')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"
@@ -141,7 +142,7 @@ export default function QRCodeModal({
 
                 {/* LinkedIn */}
                 <a
-                  href={`https://linkedin.com/in/${linkedinHandle}`}
+                  href={api.social('linkedin')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 bg-base-200 border border-base-content/20 rounded-lg hover:bg-primary hover:text-primary-content transition-colors"

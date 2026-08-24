@@ -429,3 +429,31 @@ resource "aws_lambda_function" "admin_fishtank_hero" {
     ignore_changes = [filename, source_code_hash]
   }
 }
+
+# Social passthrough redirect lambda (public)
+resource "aws_lambda_function" "social_redirect" {
+  function_name = "personal-api-social-redirect"
+  role          = aws_iam_role.lambda.arn
+  handler       = "handler.lambda_handler"
+  runtime       = local.lambda_runtime
+  timeout       = local.lambda_timeout
+  memory_size   = local.lambda_memory
+
+  filename         = local.placeholder_zip
+  source_code_hash = local.placeholder_hash
+
+  environment {
+    variables = {
+      SOCIAL_SECRET_ARN = aws_secretsmanager_secret.social_links.arn
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name     = "personal-api-social-redirect"
+    Function = "Social link passthrough redirects"
+  })
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}

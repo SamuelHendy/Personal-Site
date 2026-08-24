@@ -3,6 +3,7 @@ import { Linkedin, Github, Instagram, Music, Camera, ChevronRight } from 'lucide
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import type { PageEnabledConfig } from '../types/pageEnabled'
+import { api } from '../config/api'
 
 interface MainNavProps {
   pageEnabled: PageEnabledConfig
@@ -112,7 +113,7 @@ export default function MainNav({ pageEnabled }: MainNavProps) {
               {/* Row 1 - 3 icons */}
               {/* LinkedIn */}
               <a 
-                href="https://www.linkedin.com/in/samuel-hendy-958773179/" 
+                href={api.social('linkedin')} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-[#0A66C2] hover:text-white transition-colors"
@@ -122,7 +123,7 @@ export default function MainNav({ pageEnabled }: MainNavProps) {
               </a>
               {/* GitHub */}
               <a 
-                href="https://github.com/SamuelHendy" 
+                href={api.social('github')} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-[#24292e] hover:text-white transition-colors"
@@ -132,7 +133,7 @@ export default function MainNav({ pageEnabled }: MainNavProps) {
               </a>
               {/* Instagram */}
               <a 
-                href="https://instagram.com/sam.hendy_" 
+                href={api.social('instagram')} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-gradient-to-br hover:from-[#833AB4] hover:via-[#FD1D1D] hover:to-[#F77737] hover:text-white transition-colors"
@@ -144,7 +145,7 @@ export default function MainNav({ pageEnabled }: MainNavProps) {
               {/* Row 2 - 2 icons (centered) */}
               {/* Unsplash */}
               <a 
-                href="https://unsplash.com/@samuel_h" 
+                href={api.social('unsplash')} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-black dark:hover:bg-[#F5F5F5] hover:text-white dark:hover:text-black transition-colors col-start-1"
@@ -154,7 +155,7 @@ export default function MainNav({ pageEnabled }: MainNavProps) {
               </a>
               {/* Spotify */}
               <a 
-                href="https://open.spotify.com/user/21yl4qbxlvja34wdtqyrs5zpy" 
+                href={api.social('spotify')} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-[var(--color-background)] border border-[var(--color-text-primary)] flex items-center justify-center hover:bg-[#1DB954] hover:text-white transition-colors col-start-2"

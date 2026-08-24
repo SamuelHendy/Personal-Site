@@ -19,4 +19,5 @@ export const api = {
   fishtankTimeline: `${BASE_URL}/fishtank/timeline`,
   fishtankHero: `${BASE_URL}/fishtank/hero`,
   config: (configType: string, configKey: string) => `${BASE_URL}/config/${configType}/${configKey}`,
+  social: (platform: string) => `${BASE_URL}/social/${platform}`,
 }

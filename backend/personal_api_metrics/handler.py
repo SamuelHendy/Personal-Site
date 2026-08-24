@@ -201,6 +201,31 @@ def get_popular_pages(limit: int = 10) -> list:
         return []
 
 
+def get_social_clicks(days: int = 30) -> list:
+    """Get social passthrough click counts by platform."""
+    query = f"""
+    SELECT
+        regexp_extract(cs_uri_stem, '/api/social/([^/?]+)', 1) as platform,
+        COUNT(*) as clicks
+    FROM cloudfront_logs
+    WHERE date >= CURRENT_DATE - INTERVAL '{days}' DAY
+      AND cs_uri_stem LIKE '/api/social/%'
+      AND sc_status >= 300 AND sc_status < 400
+    GROUP BY 1
+    ORDER BY clicks DESC
+    """
+    try:
+        results = execute_query(query)
+        return [
+            {'platform': r['platform'], 'clicks': int(r['clicks'])}
+            for r in results
+            if r.get('platform')
+        ]
+    except Exception as e:
+        logger.warning(f"Failed to get social clicks: {e}")
+        return []
+
+
 def get_api_performance() -> list:
     """Get API endpoint performance stats."""
     query = """
@@ -240,6 +265,7 @@ def lambda_handler(event, context):
     GET /api/admin/metrics - Returns dashboard metrics
     GET /api/admin/metrics?type=traffic&days=7 - Returns traffic over time
     GET /api/admin/metrics?type=pages - Returns popular pages
+    GET /api/admin/metrics?type=social - Returns social link click counts
     GET /api/admin/metrics?type=api - Returns API performance
     """
     try:
@@ -263,6 +289,10 @@ def lambda_handler(event, context):
         elif metric_type == 'pages':
             data = get_popular_pages()
             cache_ttl = 900  # 15 minutes for pages
+        elif metric_type == 'social':
+            days = int(params.get('days', 30))
+            data = get_social_clicks(days)
+            cache_ttl = 900  # 15 minutes for social stats
         elif metric_type == 'api':
             data = get_api_performance()
             cache_ttl = 900  # 15 minutes for API stats
