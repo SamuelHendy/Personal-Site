@@ -2,15 +2,13 @@ import json
 import logging
 import os
 import re
-import boto3
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-_secrets = None
 _social_map_cache = None
 
-# Fallback for local dev when Secrets Manager is not configured
+# Fallback for local dev when SOCIAL_MAP_JSON is not configured
 DEFAULT_SOCIAL_MAP = {
     'linkedin': 'https://www.linkedin.com/in/samuel-hendy-958773179/',
     'github': 'https://github.com/SamuelHendy',
@@ -22,37 +20,18 @@ DEFAULT_SOCIAL_MAP = {
 PLATFORM_PATTERN = re.compile(r'^[a-z0-9_-]{1,32}$')
 
 
-def get_secrets_client():
-    global _secrets
-    if _secrets is None:
-        _secrets = boto3.client('secretsmanager')
-    return _secrets
-
-
 def load_social_map() -> dict:
-    """Load SOCIAL_MAP from Secrets Manager, with env/local fallbacks."""
+    """Load platform -> URL map from SOCIAL_MAP_JSON env var."""
     global _social_map_cache
     if _social_map_cache is not None:
         return _social_map_cache
-
-    secret_arn = os.environ.get('SOCIAL_SECRET_ARN')
-    if secret_arn:
-        try:
-            response = get_secrets_client().get_secret_value(SecretId=secret_arn)
-            payload = json.loads(response['SecretString'])
-            social_map = payload.get('SOCIAL_MAP', payload)
-            if not isinstance(social_map, dict):
-                raise ValueError('SOCIAL_MAP must be an object')
-            _social_map_cache = {k.lower(): v for k, v in social_map.items()}
-            return _social_map_cache
-        except Exception as e:
-            logger.error(f'Failed to load social map from secret: {e}')
-            raise
 
     raw_json = os.environ.get('SOCIAL_MAP_JSON')
     if raw_json:
         payload = json.loads(raw_json)
         social_map = payload.get('SOCIAL_MAP', payload)
+        if not isinstance(social_map, dict):
+            raise ValueError('SOCIAL_MAP must be an object')
         _social_map_cache = {k.lower(): v for k, v in social_map.items()}
         return _social_map_cache
 

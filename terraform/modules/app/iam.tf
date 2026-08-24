@@ -52,26 +52,6 @@ resource "aws_iam_role_policy" "lambda_s3" {
   })
 }
 
-resource "aws_iam_role_policy" "lambda_secrets_social" {
-  name = "personal-site-lambda-secrets-social"
-  role = aws_iam_role.lambda.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [
-          aws_secretsmanager_secret.social_links.arn
-        ]
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role_policy" "lambda_dynamodb" {
   name = "personal-site-lambda-dynamodb-readonly"
   role = aws_iam_role.lambda.id

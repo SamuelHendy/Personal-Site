@@ -8,6 +8,15 @@ locals {
   lambda_memory    = 256
   placeholder_zip  = "${path.module}/templates/lambda/placeholder.zip"
   placeholder_hash = filebase64sha256("${path.module}/templates/lambda/placeholder.zip")
+
+  # Platform slug -> HTTPS destination for GET /api/social/{platform}
+  social_map = {
+    linkedin  = "https://www.linkedin.com/in/samuel-hendy-958773179/"
+    github    = "https://github.com/SamuelHendy"
+    instagram = "https://instagram.com/sam.hendy_"
+    unsplash  = "https://unsplash.com/@samuel_h"
+    spotify   = "https://open.spotify.com/user/21yl4qbxlvja34wdtqyrs5zpy"
+  }
 }
 
 # Health check lambda
@@ -444,7 +453,7 @@ resource "aws_lambda_function" "social_redirect" {
 
   environment {
     variables = {
-      SOCIAL_SECRET_ARN = aws_secretsmanager_secret.social_links.arn
+      SOCIAL_MAP_JSON = jsonencode(local.social_map)
     }
   }
 
