@@ -321,11 +321,11 @@ export default function Dashboard() {
               <div className="stat-figure text-secondary">
                 <Users className="w-6 h-6" />
               </div>
-              <div className="stat-title">Unique Visitors</div>
+              <div className="stat-title">Unique IPs</div>
               <div className="stat-value text-secondary text-2xl">
                 {metricsLoading ? '...' : (metrics?.uniqueVisitors ?? 0)}
               </div>
-              <div className="stat-desc">Today</div>
+              <div className="stat-desc">Today, known pages only</div>
             </div>
             <div className="stat">
               <div className="stat-figure text-error">

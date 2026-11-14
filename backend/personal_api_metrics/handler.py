@@ -14,8 +14,8 @@ ATHENA_DATABASE = os.environ.get('ATHENA_DATABASE', 'personal_site_analytics')
 ATHENA_WORKGROUP = os.environ.get('ATHENA_WORKGROUP', 'personal-site-analytics')
 ATHENA_OUTPUT_BUCKET = os.environ.get('ATHENA_OUTPUT_BUCKET', 'shendy-personal-site-athena-results')
 
-# Public SPA route allowlist for Popular Pages metrics.
-# Keep in sync with aws_cloudfront_function.spa_rewrite in admin.tf when adding new frontend routes.
+# Public SPA route allowlist for page traffic metrics.
+# Keep in sync with frontend/src/App.tsx and aws_cloudfront_function.spa_rewrite in admin.tf.
 PAGE_ROUTE_FILTER = """
       AND (
         cs_uri_stem = '/'
@@ -24,6 +24,19 @@ PAGE_ROUTE_FILTER = """
         OR cs_uri_stem = '/watches'
         OR cs_uri_stem = '/fishtank'
       )
+"""
+
+BOT_USER_AGENT_FILTER = """
+    AND NOT regexp_like(
+      lower(coalesce(cs_user_agent, '')),
+      '(bot|crawler|spider|slurp|facebookexternalhit|meta-externalagent|bingpreview|bytespider|petalbot|ahrefsbot|semrushbot|mj12bot)'
+    )
+"""
+
+PAGE_VIEW_FILTER = f"""
+    AND sc_status < 400
+    {PAGE_ROUTE_FILTER}
+    {BOT_USER_AGENT_FILTER}
 """
 
 
@@ -102,13 +115,11 @@ def execute_query(query: str, timeout_seconds: int = 30) -> list:
 
 def get_page_views_today() -> int:
     """Get total page views for today."""
-    query = """
+    query = f"""
     SELECT COUNT(*) as count
     FROM cloudfront_logs
     WHERE date = CURRENT_DATE
-      AND cs_uri_stem NOT LIKE '/api/%'
-      AND cs_uri_stem NOT LIKE '/cdn/%'
-      AND sc_status < 400
+      {PAGE_VIEW_FILTER}
     """
     try:
         results = execute_query(query)
@@ -119,11 +130,12 @@ def get_page_views_today() -> int:
 
 
 def get_unique_visitors_today() -> int:
-    """Get unique visitors (by IP) for today."""
-    query = """
+    """Get filtered unique visitors, estimated by distinct IP addresses."""
+    query = f"""
     SELECT COUNT(DISTINCT c_ip) as count
     FROM cloudfront_logs
     WHERE date = CURRENT_DATE
+      {PAGE_VIEW_FILTER}
     """
     try:
         results = execute_query(query)
@@ -173,9 +185,7 @@ def get_traffic_over_time(days: int = 7) -> list:
     SELECT date, COUNT(*) as views, COUNT(DISTINCT c_ip) as visitors
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '{days}' DAY
-      AND cs_uri_stem NOT LIKE '/api/%'
-      AND cs_uri_stem NOT LIKE '/cdn/%'
-      AND sc_status < 400
+      {PAGE_VIEW_FILTER}
     GROUP BY date
     ORDER BY date ASC
     """
@@ -200,10 +210,7 @@ def get_popular_pages(limit: int = 10) -> list:
     SELECT cs_uri_stem as page, COUNT(*) as views
     FROM cloudfront_logs
     WHERE date >= CURRENT_DATE - INTERVAL '7' DAY
-      AND cs_uri_stem NOT LIKE '/api/%'
-      AND cs_uri_stem NOT LIKE '/cdn/%'
-      AND sc_status < 400
-      {PAGE_ROUTE_FILTER}
+      {PAGE_VIEW_FILTER}
     GROUP BY cs_uri_stem
     ORDER BY views DESC
     LIMIT {limit}
